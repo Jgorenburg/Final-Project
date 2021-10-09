@@ -1,6 +1,5 @@
 // parser program in C 
 // that process command line input for the shell
-// compile with "-lreadline"
 
 #include <unistd.h>
 #include <sys/wait.h>
@@ -100,7 +99,6 @@ void parse_info(char* buf) {
 //             return;
 //         }
 //     }
-
 
 
 int main() {
