@@ -122,7 +122,7 @@ int main() {
         printBackward() ;
         insertAtHead(node4); 
         printForward();
-        printBackward() ;
+        printBackward();
         insertAtHead(node4); 
 
         printf("print %d\n: ", findJobByJobId( 3 ));
