@@ -40,7 +40,6 @@ int parse(char* buf) {
 
 
 int main() {
-    char* buffer;
     while (1) {
         char* buffer;
         buffer=readline(">> ");

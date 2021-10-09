@@ -10,8 +10,11 @@ procLoc commandLoc = FG;
 
 void main(int argc, char *argv[]) {
 
-	else if ((pid = fork()) == 0) {
-		if (!commandLoc) {
+	pid_t pid;
+
+	if ((pid = fork()) == 0) {
+		
+		if (commandLoc == BG) {
 			//do job stuff
 			int err = execvp(command, args);
 					
@@ -19,12 +22,11 @@ void main(int argc, char *argv[]) {
 				printf("error: did not recognize the command");
 			}
 			exit(status);
-		
-
 	}
 
 	// parent waits for child's command to execute
 	else if (pid > 0) {
+		if (
 		waitpid(-1, &status, 0);
 	}
 	else {
