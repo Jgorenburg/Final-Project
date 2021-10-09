@@ -2,10 +2,10 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-#include "job.h"
+#include "jobs.h"
 
 struct Node  {
-        jobInfo* data; //the job struct storage
+        struct job* data; //the job struct storage
         struct Node* next;
         struct Node* prev;
 };
@@ -15,9 +15,9 @@ struct Node* head; //linkedList Head node
 struct Node* tail; //linkedList Tail node
 
 //create new Node and return the pointer to it
-struct Node* createNewNode(jobInfo *job){
+struct Node* createNewNode(struct job* jobtoadd){
     struct Node* newJob = (struct Node *) malloc(sizeof(struct Node));
-    newJob->data = job;
+    newJob->data = jobtoadd;
     newJob->next = NULL;
     newJob->prev = NULL;
 }
@@ -56,7 +56,7 @@ struct Node* findJobByJobId(int id){
     else{
         struct Node* temp = head;
         while(temp != NULL){
-             if( temp->data->jobid == id ){
+             if( temp->data->pid == id ){
                         return temp;
                 }
             temp = temp->next;
@@ -70,7 +70,7 @@ void printForward() {
         if (temp == NULL)
                 printf("empty ll\n");
         while(temp != NULL) {
-                printf("Job: %d\n", temp->data->jobid );
+                printf("Job: %d\n", temp->data->pid );
                 temp = temp->next;
         }
         printf("\n");
@@ -82,7 +82,7 @@ void printBackward() {
         if (temp == NULL)
                 printf("empty ll\n");
         while(temp != NULL) {
-                printf("Job: %d\n", temp->data->jobid );
+                printf("Job: %d\n", temp->data->pid );
                 temp = temp->prev;
         }
         printf("\n");
@@ -95,35 +95,7 @@ int main() {
         head = NULL; // empty list. set head as NULL. 
         tail = NULL;                                                                                                                                                       
 
-        jobInfo *job1 = initJob();
-        job1->jobid = 1;
-        struct Node *node1 = createNewNode(job1);
-        jobInfo *job2= initJob();
-        job2->jobid = 2;
-        struct Node *node2 = createNewNode(job2);
-        jobInfo *job3 = initJob();
-        job3->jobid = 3;
-        struct Node *node3 = createNewNode(job3);
-        jobInfo *job4= initJob();
-        job4->jobid = 4;
-        struct Node *node4 = createNewNode(job4);
-
-
-
         // Calling an Insert and printing list both in forward as well as reverse direction.                                                                                                                
-        insertAtTail(node1); 
-        printForward();
-        printBackward(); 
-        insertAtTail(node2); 
-        printForward();
-        printBackward(); 
-        insertAtHead(node3); 
-        printForward();
-        printBackward() ;
-        insertAtHead(node4); 
-        printForward();
-        printBackward();
-        insertAtHead(node4); 
 
         printf("print %d\n: ", findJobByJobId( 3 ));
 }

@@ -1,10 +1,9 @@
 #include "jobs.h"
 
-void init_job(int ID, int grpID, char* input, struct Termios *ioSettings) {
+void initJob(pid_t ID,  char* input, struct Termios *ioSettings) {
 	struct job newJob;
 
-	newJob.id = ID;
-	newJob.grp_id = grpID;
+	newJob.pid = ID;
 	newJob.input = input;
 	newJob.state = running;
 	newJob.status = fg;
@@ -16,7 +15,7 @@ void init_job(int ID, int grpID, char* input, struct Termios *ioSettings) {
 
 
 int getID(const struct job j) {
-	return j.id;
+	return j.pid;
 }
 int getGrpID(const struct job j) {
 	return j.grp_id;
@@ -36,8 +35,8 @@ struct Termios *getTermios(const struct job j) {
 
 
 
-void setID(struct job *j, int id){
-	j->id = id;
+void setID(struct job *j, pid_t id){
+	j->pid = id;
 }
 void setGrpID(struct job *j, int ID){
 	j->grp_id = ID;
@@ -61,11 +60,11 @@ void setForeground(struct job *j) {
 	j->state = fg;
 }
 void pauseJob(struct job *j) {
-	j->status = stopped;
+	j->status = suspended;
 }
-void resumeJob(struct job *j) {
-	j->status = running;
-}
+// void resumeJob(struct job *j) {
+// 	j->status = running;
+// }
 
 void main(){
 	
