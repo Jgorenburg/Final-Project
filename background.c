@@ -1,36 +1,58 @@
-#include <termios.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <pthread.h>
-
-enum procLoc{BG, FG};
-
-procLoc commandLoc = FG;
+#include "commands.h"
 
 
-void main(int argc, char *argv[]) {
+
+
+int runProg(char *args[]) {
+	pid_t pid;
+
+	// TODO: job stuff
+
+	// child's code
+	if ((pid = fork()) == 0) {	
+		int err = execvp(args[0], args);		
+		if (err == -1) {
+			printf("error: did not recognize the command");
+		}
+		exit(status);
+	}
+
+	// parents code
+	else if (pid > 0) {
+		// the shell does not stop if the process is running in the bg
+		if (commandLoc == FG) {
+			pause();
+		}
+		else {
+			printf("error: fork did not run properly");
+		}
+	}
+}
+
+void main() {
 
 	pid_t pid;
 
-	if ((pid = fork()) == 0) {
-		
-		if (commandLoc == BG) {
-			//do job stuff
-			int err = execvp(command, args);
-					
-			if (err == -1) {
-				printf("error: did not recognize the command");
-			}
-			exit(status);
-	}
+	// get parser output
+	// place in argv 
 
-	// parent waits for child's command to execute
-	else if (pid > 0) {
-		if (
-		waitpid(-1, &status, 0);
+	int i = 0;
+	int startPos = i;
+	if (builtIn(argv[startPos])) {
+		// implement built in functions
 	}
 	else {
-		printf("error: fork did not run properly");
+		while (i < argc) {
+			if (specialChar(argv[i]) {
+				// implement special chars
+			}
+			++i;			
+		}
 	}
+}
+
+
+
+
 
 

@@ -61,6 +61,8 @@ struct Node* findJobByJobId(int id){
                 }
             temp = temp->next;
         }
+	// if no node matches the id
+	return NULL;
     }
 }
 
