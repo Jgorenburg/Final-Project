@@ -1,8 +1,12 @@
 #include "shared.h"
 
 // global variables
-struct LinkedList jobList;
+struct LinkedList* joblist;
+
+
 
 // TODO use defines in parser
 char argArray[10][100];
 int argc = 0;
+
+char *specialChars = "&%;|><";

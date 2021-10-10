@@ -10,7 +10,7 @@ shell: main.o shared.o parser.o linkedlist.o jobs.o executor.o
 test: main.o executor.o shared.o
 	$(CC) $(CFLAGS) -o test main.o executor.o shared.o
 
-main.o: main.c main.h
+main.o: main.c main.h parser.o
 	$(CC) $(CFLAGS) -c main.c
 
 shared.o: shared.c shared.h

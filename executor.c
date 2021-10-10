@@ -4,7 +4,7 @@
 // and the index of c in specialChar if it is
 int isSpecChar(char c) {
 	
-	char *specialChars = "&%;|><";
+	//char *specialChars = "&%;|><";
 	for (int i = 0; i < strlen(specialChars); i++) {
 		if (c == specialChars[i]) {
 			return i;
@@ -28,7 +28,8 @@ void runProg(char *args[]) {
 
 	// child's code
 	if ((pid = fork()) == 0) {	
-		int err = execvp(args[0], args);		
+		char * command = strtok(args[0], "\0");
+		int err = execvp(command, args);		
 		if (err == -1) {
 			printf("error: did not recognize the command");
 		}
