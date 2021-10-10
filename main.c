@@ -8,9 +8,38 @@
 // #define NULL (void *) 0
 // #endif
 
-//Global variables
+//global variuable 
 int shell_id;
-struct termios *shell_terminal_settings;
+struct termios* shell_terminal_settings;
+
+// // signal handler for SIGCHLD
+// static void signal_handler(int sig, siginfo_t *si, void *unused){
+//     // check siginfo_t (si->si_code) then do cases
+//     printf("child id is: %d; status is: %d\n", si->si_pid, si->si_code);
+//     int child_code = si->si_code;
+//     if (child_code==CLD_EXITED) {
+//         // update(delete) the job from job list
+//     }
+//     if (child_code==CLD_KILLED || child_code==CLD_DUMPED) {
+//         // child has terminated abnormally
+//         // update(delete) the job from job list
+//     }
+//     if (child_code==CLD_TRAPPED) {
+//         // child has trapped (do not know what this means)
+//         // do we do anything?
+//     }
+//     if (child_code==CLD_STOPPED) {
+//         // check if it is a foreground job
+//         // if it is, put it in bg and update(add it to) job list 
+//     }
+//     if (child_code==CLD_CONTINUED) {
+//         // Stopped child has continued.
+//         // change status to one
+//         // put it in fg and delete it from job list
+//     }
+//     // kill(si->si_pid, SIGCONT);
+//     // sleep(10);
+// }
 
 
 void main() {
