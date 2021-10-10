@@ -1,5 +1,12 @@
 #include "main.h"
 
+// #include <signal.h>
+// #include <termios.h>
+// #ifndef NULL
+// #define NULL (void *) 0
+// #endif
+
+
 void main() {
 	joblist = (struct LinkedList*)malloc(sizeof(*joblist));
 	
