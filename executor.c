@@ -3,6 +3,8 @@
 // returns -1 if c is not a special char
 // and the index of c in specialChar if it is
 int isSpecChar(char c) {
+	
+	char *specialChars = "&%;|><";
 	for (int i = 0; i < strlen(specialChars); i++) {
 		if (c == specialChars[i]) {
 			return i;

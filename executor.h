@@ -1,7 +1,9 @@
+#ifndef CUTOR_H
+#define CUTOR_H
+
 #include <termios.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <pthread.h>
 #include <string.h>
 #include "shared.h"
 
@@ -10,11 +12,15 @@ extern char argArray[10][100];
 extern int argc;
 */
 
-enum procLoc{BG, FG} commandLoc = FG;
 
-char *specialChars = "&%;|><"; 
+
+enum procLoc{BG, FG} commandLoc;
+
+//char *specialChars[10]; 
 
 void specChar(char c);
 int isSpecChar(char c);
 void runProg(char *args[]);
-int main();
+void execute();
+
+#endif

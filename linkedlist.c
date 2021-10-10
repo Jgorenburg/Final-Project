@@ -79,7 +79,3 @@ void printBackward(struct LinkedList* jobList) {
 }
 
 
-int main() {
-
-
-}

@@ -1,3 +1,6 @@
+#ifndef JOBS_H
+#define JOBS_H
+
 #include <termios.h>
 
 enum State {bg, fg};
@@ -36,4 +39,5 @@ void pauseJob(struct job *j);
 void resumeJob(struct job *j);
 
 
- 
+
+#endif 

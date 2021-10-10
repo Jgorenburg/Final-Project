@@ -1,8 +1,12 @@
+#ifndef LINKEDLIST_H
+#define LINKEDLIST_H
+
 //doubly linked list
 #include<stdio.h>
 #include<stdlib.h>
 
 #include "jobs.h"
+#include "executor.h"
 
 struct Node {
         struct job* data; //the job struct storage
@@ -26,3 +30,4 @@ void printForward(struct LinkedList* jobList);
 void printBackward(struct LinkedList* jobList);
 
 
+#endif

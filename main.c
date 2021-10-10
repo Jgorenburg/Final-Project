@@ -1,9 +1,8 @@
-#include "parser.c"
-#include "executor.h"
+#include "main.h"
 
-// global variables
-struct LinkedList jobList;
-
-// TODO use defines in parser
-char argArray[10][100];
-int argc = 0;
+void main() {
+	while(1) {
+		parserMain();	
+		execute();	
+	}
+}
