@@ -1,6 +1,7 @@
 #include <termios.h>
 #include <signal.h>
 #include "main.h"
+#include "linkedlist.h"
 
 // #include <signal.h>
 // #include <termios.h>
@@ -12,37 +13,60 @@
 int shell_id;
 struct termios* shell_terminal_settings;
 
-// // signal handler for SIGCHLD
-// static void signal_handler(int sig, siginfo_t *si, void *unused){
-//     // check siginfo_t (si->si_code) then do cases
-//     printf("child id is: %d; status is: %d\n", si->si_pid, si->si_code);
-//     int child_code = si->si_code;
-//     if (child_code==CLD_EXITED) {
-//         // update(delete) the job from job list
-//     }
-//     if (child_code==CLD_KILLED || child_code==CLD_DUMPED) {
-//         // child has terminated abnormally
-//         // update(delete) the job from job list
-//     }
-//     if (child_code==CLD_TRAPPED) {
-//         // child has trapped (do not know what this means)
-//         // do we do anything?
-//     }
-//     if (child_code==CLD_STOPPED) {
-//         // check if it is a foreground job
-//         // if it is, put it in bg and update(add it to) job list 
-//     }
-//     if (child_code==CLD_CONTINUED) {
-//         // Stopped child has continued.
-//         // change status to one
-//         // put it in fg and delete it from job list
-//     }
-//     // kill(si->si_pid, SIGCONT);
-//     // sleep(10);
-// }
+//destructor jobs
+void destructoreJob(struct Node* temp){
+	struct Node localNode = *temp;
+	localNode.prev = localNode.next;
+	struct job* givenJob = localNode.data;
+	free(givenJob->input);
+	free(givenJob->ioSettings);
+	free(temp);
+}
+
+// signal handler for SIGCHLD
+static void signal_action_handler(int sig, siginfo_t *si, void *unused){
+	struct Node temp = *findJobByJobId(joblist, (int) si->si_pid);
+	//now cases
+	if(sig == SIGCHLD){
+		int status = si->si_code;
+		switch(status){
+			case CLD_EXITED:
+			case CLD_DUMPED:
+			case CLD_KILLED: 
+				printf("process %d killed successfully.", temp.data->pid);
+				sigset_t set;
+				sigemptyset(&set);
+				sigaddset(&set, SIGCHLD);
+				sigprocmask(SIG_BLOCK, &set, SIGCHLD);
+				destructoreJob(&temp);
+				sigprocmask(SIG_UNBLOCK, &set, SIGCHLD);
+				break;
+			case CLD_STOPPED:
+				sigset_t set;
+				sigemptyset(&set);
+				sigaddset(&set, SIGCHLD);
+				sigprocmask(SIG_BLOCK, &set, SIGCHLD);
+				temp.data->status = suspended;
+				printf("process %d suspended successfully.", temp.data->pid);
+				sigprocmask(SIG_UNBLOCK, &set, SIGCHLD);
+				break;
+			case CLD_CONTINUED:
+				sigset_t set;
+				sigemptyset(&set);
+				sigaddset(&set, SIGCHLD);
+				sigprocmask(SIG_BLOCK, &set, SIGCHLD);
+				temp.data->status = running;
+				printf("process %d resumed successfully.", temp.data->pid);
+				sigprocmask(SIG_UNBLOCK, &set, SIGCHLD);
+				break; 
+			default:
+				break;
+		}
+	}
+}
 
 
-void main() {
+int main() {
 
 	//mallocing space for shell settings termios
 	shell_terminal_settings = (struct termios *) malloc(sizeof(struct termios));
@@ -66,7 +90,7 @@ void main() {
 
 	struct sigaction sigact;
 	sigact.sa_flags = SA_SIGINFO;
-	// sigact.sa_sigaction = signal_handler;
+	sigact.sa_sigaction = signal_action_handler;
 	sigaction(SIGCHLD, &sigact, NULL);
 
 
@@ -97,4 +121,5 @@ void main() {
 		parserMain();	
 		execute();	
 	}
+	return 1;
 }
