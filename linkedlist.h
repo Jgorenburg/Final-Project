@@ -16,14 +16,9 @@ struct Node {
 
 
 struct LinkedList{
-<<<<<<< HEAD
-    struct Node* head;
-    struct Node* tail;
-=======
 	struct Node* head;
 	struct Node* tail;
 	int i;
->>>>>>> b18c53ca69dc339be42905d316e62cf3a765bef5
 };
 
 

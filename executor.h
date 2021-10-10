@@ -17,4 +17,4 @@ char *specialChars = "&%;|><";
 void specChar(char c);
 int isSpecChar(char c);
 void runProg(char *args[]);
-int main();
+// int main();
