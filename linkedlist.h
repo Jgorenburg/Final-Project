@@ -16,15 +16,15 @@ struct Node {
 
 
 struct LinkedList{
-    struct Node* head;
-    struct Node* tail;
+    struct Node* head = NULL;
+    struct Node* tail = NULL;
 };
 
 
 //methods 
-void insertAtHead(struct Node* head, struct Node* tail, struct Node* node);
+void insertAtHead(struct LinkedList* jobList, struct Node* node);
 struct Node* createNewNode(struct LinkedList* jobList, struct job* jobtoadd);
-void insertAtTail(struct Node* head, struct Node* tail, struct Node* node);
+void insertAtTail(struct LinkedList* jobList, struct Node* node);
 struct Node* findJobByJobId(struct LinkedList* jobList, int id);
 void printForward(struct LinkedList* jobList);
 void printBackward(struct LinkedList* jobList);

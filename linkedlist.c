@@ -10,28 +10,28 @@ struct Node* createNewNode(struct LinkedList* jobList, struct job* jobtoadd){
 }
 
 //Insert at the Head
-void insertAtHead(struct Node* head, struct Node* tail, struct Node* node){
-	if(head == NULL){
-		head = node;
-		tail = node;
+void insertAtHead(struct LinkedList* jobList, struct Node* node){
+	if(jobList->head == NULL){
+		jobList->head = node;
+		jobList->tail = node;
 	}
 	else{
-		head->prev = node;
-		node->next = head;
-		head = node;
+		jobList->head->prev = node;
+		node->next = jobList->head;
+		jobList->head = node;
 	}
 }
 
 //insert at tail of the doubly linked List
-void insertAtTail(struct Node* head, struct Node* tail, struct Node* node){
-	if(tail == NULL){
-		tail = node;
-		head = node;
+void insertAtTail(struct LinkedList* jobList, struct Node* node){
+	if(jobList->tail == NULL){
+		jobList->tail = node;
+		jobList->head = node;
 	}
 	else{
-		tail->next = node;
-		node->prev = tail;
-		tail = node;
+		jobList->tail->next = node;
+		node->prev = jobList->tail;
+		jobList->tail = node;
 	}
 }
 
