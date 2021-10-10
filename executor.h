@@ -10,7 +10,7 @@ extern char argArray[10][100];
 extern int argc;
 */
 
-enum procLoc{BG, FG} commandLoc = FG;
+enum procLoc{BG, FG} commandLoc;
 
 char *specialChars = "&%;|><"; 
 
