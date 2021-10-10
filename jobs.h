@@ -39,5 +39,4 @@ void pauseJob(struct job *j);
 void resumeJob(struct job *j);
 
 
-
 #endif 
