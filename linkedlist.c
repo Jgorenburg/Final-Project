@@ -8,6 +8,7 @@ struct Node* createNewNode(struct LinkedList* jobList, struct job* jobtoadd){
     newJob->data = jobtoadd;
     newJob->next = NULL;
     newJob->prev = NULL;
+    return newJob;
 }
 
 //Insert at the Head
