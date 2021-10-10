@@ -27,7 +27,14 @@ void runProg(char *args[], char *args2[]) {
 	pid_t pid;
 
 	// child's code
-	if ((pid = fork()) == 0) {	
+	if ((pid = fork()) == 0) {
+		//setting default signal handling for the child process	
+		// signal(SIGINT, SIG_DFL);
+        // signal(SIGQUIT, SIG_DFL);
+        // signal(SIGTTIN, SIG_DFL);
+        // signal(SIGTTOU, SIG_DFL);
+        // signal(SIGCHLD, SIG_DFL);
+
 		char * command = strtok(args[0], "\0");
 		int err = execvp(command, args2);		
 		if (err == -1) {

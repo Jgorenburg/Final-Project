@@ -6,6 +6,6 @@
 #include "shared.h"
 #include "linkedlist.h"
 
-void main();
+int main();
 
 #endif

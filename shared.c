@@ -1,4 +1,5 @@
 #include "shared.h"
+#include "jobs.h"
 
 // global variables
 struct LinkedList* joblist;
