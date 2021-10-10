@@ -12,8 +12,8 @@ void init_arg() {
 // checks if character is a specials symbol
 // return 0 if it is, else return 1
 int special_symbol(char item) {
-	for (int i=0;i<strlen(SYMBOLS)-1;i++) {
-		if (item==SYMBOLS[i]) {return 0;}
+	for (int i=0;i<strlen(specialChars)-1;i++) {
+		if (item==specialChars[i]) {return 0;}
 	}
 	return 1;
 }
