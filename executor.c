@@ -28,8 +28,11 @@ void runProg(char *args[]) {
 
 	// child's code
 	if ((pid = fork()) == 0) {	
-		char * command = strtok(args[0], "\0");
-		int err = execvp(command, args);		
+		//char * command = strtok(args[0], "\0");
+		char * command = "ls";
+		char * simpArgs[2];
+		simpArgs[0] = args[0];
+		int err = execvp(command, simpArgs);		
 		if (err == -1) {
 			printf("error: did not recognize the command");
 		}
