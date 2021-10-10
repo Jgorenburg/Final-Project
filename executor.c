@@ -23,8 +23,10 @@ void specChar(char c) {
 }
 
 
-void runProg(char *args[], char *args2[]) {
+void runProg(char *args[MAX_CHARS_PER_LINE], char *args2[MAX_CHARS_PER_LINE]) {
 	pid_t pid;
+
+	printf("before fork\n");
 
 	// child's code
 	if ((pid = fork()) == 0) {
@@ -35,7 +37,9 @@ void runProg(char *args[], char *args2[]) {
         // signal(SIGTTOU, SIG_DFL);
         // signal(SIGCHLD, SIG_DFL);
 
-		char * command = strtok(args[0], "\0");
+		char * command = args[0];
+		//command = strtok(args[0], "\0");
+		
 		int err = execvp(command, args2);		
 		if (err == -1) {
 			printf("error: did not recognize the command");
@@ -90,10 +94,12 @@ void execute() {
 
 				int numArgs = i - startPos;
 				if (numArgs > 0) {
-					char *args[numArgs];
+					char args[numArgs + 1][MAX_CHARS_PER_LINE];
 					for (int j = 0; j < numArgs; j++) {
-						args[j] = argArray[startPos + j];
+						strcpy(args[j], argArray[startPos + j]);
 					}
+					char *empty = "";
+					strcpy(args[numArgs], empty);
 					runProg(args, args);	
 					startPos = i + 1;
 
@@ -106,11 +112,22 @@ void execute() {
 		}
 		int numArgs = i - startPos;
 		if (numArgs > 0) {
-			char *args[numArgs];
-			for (int j = 0; j < numArgs; j++) {
-				args[j] = argArray[startPos + j];
+		//	char args[numArgs + 1][MAX_CHARS_PER_LINE];
+			char **args = (char**)malloc(numArgs + 1 * sizeof(char *));
+			for (int j = 0; j <= numArgs; j++) {
+				args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
 			}
-			runProg(args, args);	
+			for (int j = 0; j < numArgs; j++) {
+				strcpy(args[j], argArray[startPos + j]);
+			}
+			char *empty = "";
+			strcpy(args[numArgs], empty);
+			runProg(args, args);
+	
+			for (int j = 0; j <= numArgs; j++ {
+				free(args[j]);
+			}
+			free(args);
 		}	
 	}
 }

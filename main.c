@@ -42,8 +42,8 @@ struct termios* shell_terminal_settings;
 // }
 
 
-void main() {
-
+int main() {
+/*
 	//mallocing space for shell settings termios
 	shell_terminal_settings = (struct termios *) malloc(sizeof(struct termios));
 	shell_id = getpid(); //stoding shellpid
@@ -69,7 +69,7 @@ void main() {
 	// sigact.sa_sigaction = signal_handler;
 	sigaction(SIGCHLD, &sigact, NULL);
 
-
+*/
 
 
 	joblist = (struct LinkedList*)malloc(sizeof(*joblist));
