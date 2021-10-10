@@ -1,7 +1,9 @@
 #include "shared.h"
+#include "jobs.h"
 
 // global variables
-struct LinkedList jobList;
+extern struct LinkedList jobList;
+
 
 // TODO use defines in parser
 char argArray[10][100];
