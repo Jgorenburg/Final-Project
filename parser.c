@@ -7,6 +7,7 @@
 #include <string.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include "shared.h"
 
 #ifndef NULL
 #define NULL (void *) 0
@@ -16,8 +17,8 @@
 #define SYMBOLS "&%;|><"
 
 // global variables
-int argc;   // number of arguments
-char argArray[MAX_CMD][MAX_CMD_LEN];    // 2d array for command line input
+//extern int argc;   // number of arguments
+//extern char argArray[MAX_CMD][MAX_CMD_LEN];    // 2d array for command line input
 int i, j;   // variable for iteration
 
 // initialize argArray
@@ -63,7 +64,7 @@ int parse(char* buf) {
     return 0;
 }
 
-int main() {
+int parserMain() {
     char* buffer;
     while (1) {
         char* buffer;

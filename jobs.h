@@ -14,7 +14,7 @@ struct job {
 
 // makes a new job for the current process
 // and adds it to the job list
-void initJob(pid_t ID,  char* input, struct Termios *ioSettings);
+struct job initJob(pid_t ID,  char* input, struct Termios *ioSettings);
 
 // returns element for the given job
 int getID(const struct job j);

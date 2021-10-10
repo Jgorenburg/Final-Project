@@ -1,6 +1,6 @@
 #include "jobs.h"
 
-void initJob(pid_t ID,  char* input, struct Termios *ioSettings) {
+struct job initJob(pid_t ID,  char* input, struct Termios *ioSettings) {
 	struct job newJob;
 
 	newJob.pid = ID;
@@ -9,8 +9,7 @@ void initJob(pid_t ID,  char* input, struct Termios *ioSettings) {
 	newJob.status = fg;
 	newJob.ioSettings = ioSettings;
 
-	// insert on linked list
-	// return way to access job
+	return newJob;
 }
 
 
@@ -66,11 +65,7 @@ void pauseJob(struct job *j) {
 // 	j->status = running;
 // }
 
-void main(){
-	
 
-
-}
 
 
 
