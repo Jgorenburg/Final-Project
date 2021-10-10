@@ -1,7 +1,7 @@
 #include "linkedlist.h"
 
 
-struct Node* createNewNode(struct LinkedList* jobList, struct job* jobtoadd){
+struct Node* createNewNode(struct job* jobtoadd){
 	struct Node* newJob = (struct Node *) malloc(sizeof(struct Node));
 	newJob->data = jobtoadd;
 	newJob->next = NULL;

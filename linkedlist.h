@@ -24,7 +24,7 @@ struct LinkedList{
 
 //methods 
 void insertAtHead(struct LinkedList* jobList, struct Node* node);
-struct Node* createNewNode(struct LinkedList* jobList, struct job* jobtoadd);
+struct Node* createNewNode(struct job* jobtoadd);
 void insertAtTail(struct LinkedList* jobList, struct Node* node);
 struct Node* findJobByJobId(struct LinkedList* jobList, int id);
 void printForward(struct LinkedList* jobList);

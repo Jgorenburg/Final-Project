@@ -20,7 +20,7 @@ enum procLoc{BG, FG} commandLoc;
 
 void specChar(char c);
 int isSpecChar(char c);
-void runProg(char *args[]);
+void runProg(char *args[], char *args2[]);
 void execute();
 
 #endif
