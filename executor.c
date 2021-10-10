@@ -1,9 +1,12 @@
 #include "executor.h"
 
+#ifndef NULL
+#define NULL (void *) 0
+#endif
+
 // returns -1 if c is not a special char
 // and the index of c in specialChar if it is
 int isSpecChar(char c) {
-	
 	//char *specialChars = "&%;|><";
 	for (int i = 0; i < strlen(specialChars); i++) {
 		if (c == specialChars[i]) {
@@ -23,20 +26,22 @@ void specChar(char c) {
 }
 
 
-void runProg(char *args[], char *args2[]) {
+void runProg(char* args[]) {
 	pid_t pid;
 
 	// child's code
-	if ((pid = fork()) == 0) {
-		//setting default signal handling for the child process	
-		// signal(SIGINT, SIG_DFL);
-        // signal(SIGQUIT, SIG_DFL);
-        // signal(SIGTTIN, SIG_DFL);
-        // signal(SIGTTOU, SIG_DFL);
-        // signal(SIGCHLD, SIG_DFL);
-
-		char * command = strtok(args[0], "\0");
-		int err = execvp(command, args2);		
+	if ((pid = fork()) == 0) {	
+		// char * command = strtok(args[0], "\0");
+		// printf("command char is: ");
+		// for (int k=0;k<strlen(command);k++) {
+		// 	printf("%c, ", command[k]);
+		// }
+		// printf("argument list is: ");
+		// for (int j = 0; j < strlen(*args); j++) {
+		// 	printf("%c; ",*args[j]);
+		// }
+		// int err = execvp(command, args);
+		int err = execvp(args[0], args);		
 		if (err == -1) {
 			printf("error: did not recognize the command");
 		}
@@ -46,25 +51,12 @@ void runProg(char *args[], char *args2[]) {
 	// parents code
 	else if (pid > 0) {
 
-		// TODO: figure out giving input to job
-		struct termios job_termios;
-		
-		if(tcgetattr(STDIN_FILENO, &job_termios) < 0) {
-        		printf("error: assigning termios failed");
-			return;
-        	}
-
-		struct job* newJob = initJob(pid, "placeholder", &job_termios);
-		setState(newJob, commandLoc);
-		struct Node* jobNode = createNewNode(newJob);
-		insertAtHead(joblist, jobNode);
-
+		// TODO: job stuff
 
 		// the shell does not stop if the process is running in the bg
 		if (commandLoc == FG) {
 			pause();
 		}
-		// TODO: what is the purpose of this else block?
 		else {
 			printf("error: fork did not run properly");
 		}
@@ -72,6 +64,7 @@ void runProg(char *args[], char *args2[]) {
 }
 
 void execute() {
+
 	commandLoc = FG;
 
 	int i = 0;
@@ -87,16 +80,11 @@ void execute() {
 			if ((pos = isSpecChar(argArray[i][0])) >= 0) {
 				// implement special chars
 				specChar(argArray[i][0]);
-
 				int numArgs = i - startPos;
 				if (numArgs > 0) {
 					char *args[numArgs];
-					for (int j = 0; j < numArgs; j++) {
-						args[j] = argArray[startPos + j];
-					}
-					runProg(args, args);	
+					runProg(args);	
 					startPos = i + 1;
-
 				}
 				startPos = i + 1;
 			}
@@ -106,17 +94,28 @@ void execute() {
 		}
 		int numArgs = i - startPos;
 		if (numArgs > 0) {
-			char *args[numArgs];
-			for (int j = 0; j < numArgs; j++) {
-				args[j] = argArray[startPos + j];
+			char *args[100];
+			for (int j = 0; j < numArgs+1; j++) {
+				if (j==numArgs) {
+					args[j]='\0';
+				}
+				else {
+					for (int k=0;k<strlen(argArray[startPos + j]);k++) {
+						args[j][k]=argArray[startPos + j][k];
+					}
+				}
 			}
-			runProg(args, args);	
+
+			printf("length of argument list is: %d\n",numArgs);
+			printf("argument list is: \n");
+			for (int j = 0; j < numArgs; j++) {
+				printf("%s,\n",args[j]);
+			}
+			runProg(args);
+			// int err = execvp(args[0], args);	
+			// if (err == -1) {
+			// 	printf("error: did not recognize the command");
+			// }
 		}	
 	}
 }
-
-
-
-
-
-
