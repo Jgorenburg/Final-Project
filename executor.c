@@ -23,7 +23,7 @@ void specChar(char c) {
 }
 
 
-void runProg(char *args[]) {
+void runProg(char *args[], char *args2[]) {
 	pid_t pid;
 
 	// child's code
@@ -36,7 +36,7 @@ void runProg(char *args[]) {
         // signal(SIGCHLD, SIG_DFL);
 
 		char * command = strtok(args[0], "\0");
-		int err = execvp(command, args);		
+		int err = execvp(command, args2);		
 		if (err == -1) {
 			printf("error: did not recognize the command");
 		}
@@ -46,12 +46,25 @@ void runProg(char *args[]) {
 	// parents code
 	else if (pid > 0) {
 
-		// TODO: job stuff
+		// TODO: figure out giving input to job
+		struct termios job_termios;
+		
+		if(tcgetattr(STDIN_FILENO, &job_termios) < 0) {
+        		printf("error: assigning termios failed");
+			return;
+        	}
+
+		struct job* newJob = initJob(pid, "placeholder", &job_termios);
+		setState(newJob, commandLoc);
+		struct Node* jobNode = createNewNode(newJob);
+		insertAtHead(joblist, jobNode);
+
 
 		// the shell does not stop if the process is running in the bg
 		if (commandLoc == FG) {
 			pause();
 		}
+		// TODO: what is the purpose of this else block?
 		else {
 			printf("error: fork did not run properly");
 		}
@@ -81,7 +94,7 @@ void execute() {
 					for (int j = 0; j < numArgs; j++) {
 						args[j] = argArray[startPos + j];
 					}
-					runProg(args);	
+					runProg(args, args);	
 					startPos = i + 1;
 
 				}
@@ -97,7 +110,7 @@ void execute() {
 			for (int j = 0; j < numArgs; j++) {
 				args[j] = argArray[startPos + j];
 			}
-			runProg(args);	
+			runProg(args, args);	
 		}	
 	}
 }

@@ -1,13 +1,15 @@
 #include "jobs.h"
 
-struct job initJob(pid_t ID,  char* input, struct Termios *ioSettings) {
-	struct job newJob;
+struct job* initJob(pid_t ID,  char* input, struct termios *ioSettings) {
+	struct job* newJob = (struct job *)malloc(sizeof(struct job));
 
-	newJob.pid = ID;
-	newJob.input = input;
-	newJob.state = running;
-	newJob.status = fg;
-	newJob.ioSettings = ioSettings;
+	newJob->pid = ID;
+	newJob->grp_id = ID;
+	newJob->input = (char *)malloc((1 + strlen(input)) * sizeof(char));
+	strcpy(newJob->input, input);
+	newJob->state = running;
+	newJob->status = fg;
+	newJob->ioSettings = ioSettings;
 
 	return newJob;
 }
@@ -28,7 +30,7 @@ char* getInput(const struct job j) {
 enum Status getStatus(const struct job j) {
 	return j.status;
 }
-struct Termios *getTermios(const struct job j) {
+struct termios *getTermios(const struct job j) {
 	return j.ioSettings;
 }
 
@@ -46,7 +48,7 @@ void setState(struct job *j, enum State s){
 void setStatus(struct job *j, enum Status s){
 	j->status = s;
 }
-void setTermios(struct job *j, struct Termios *t){
+void setTermios(struct job *j, struct termios *t){
 	j->ioSettings = t;
 }
 
