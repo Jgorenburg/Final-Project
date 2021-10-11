@@ -22,8 +22,7 @@ void destructoreJob(struct Node* temp){
 	localNode.prev = localNode.next;
 	struct job* givenJob = localNode.data;
 	free(givenJob->input);
-	free(givenJob->ioSettings);
-	free(temp);
+	free(givenJob);
 }
 
 // signal handler for SIGCHLD
