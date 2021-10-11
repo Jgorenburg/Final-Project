@@ -5,9 +5,10 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/wait.h>
 #include "shared.h"
 
-#define MAX_CHARS_PER_LINE 100
+#define MAX_CHARS_PER_LINE MAX_LINE_SIZE
 
 /*extern struct LinkedList jobList;
 extern char argArray[10][100];

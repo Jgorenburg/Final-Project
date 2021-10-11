@@ -3,12 +3,18 @@
 
 #include "linkedlist.h"
 
+#define ML 10
+#define MS 100
 // global variables
 extern struct LinkedList* joblist;
 
-// TODO use defines in parser
-extern char argArray[10][100];
+extern int MAX_LINE_SIZE;
+extern int MAX_NUM_LINES;
+extern char argArray[ML][MS];
 extern int argc;
 
 extern char *specialChars;
+
+
 #endif
+
