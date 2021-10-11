@@ -17,7 +17,7 @@ extern char argArray[10][100];
 extern int argc;
 */
 
-
+bool quitting;
 
 enum procLoc{BG, FG} commandLoc;
 

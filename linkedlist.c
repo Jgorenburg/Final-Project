@@ -135,10 +135,18 @@ void printJobs()
 		return;
 	struct Node* temp;
 	for(temp = joblist->head; temp != NULL; temp = temp->next){
-		printf("\t[%d]\t%d\t%s", temp->data->pid, temp->data->status, temp->data->input);
+
+		char status[10];
+		if (temp->data->status == suspended) {
+			strcpy(status, "suspended");
+		}
+		else {
+			strcpy(status, "running  ");
+		}
+		printf("\n[%d]\t%s\t\t%s", temp->id, status, temp->data->input);
 		if (temp->next != NULL)
 		{
-			printf("|\n");
+			printf(" |\n");
 		}
 		else
 		{

@@ -19,10 +19,28 @@ struct termios* shell_terminal_settings;
 //destructor jobs
 void destructoreJob(struct Node* temp){
 	struct Node localNode = *temp;
-	localNode.prev = localNode.next;
+	if (localNode.next == NULL){
+		if (localNode.prev == NULL) {
+			joblist->head = NULL;
+			joblist->tail = NULL;
+		}
+		else {
+			localNode.prev->next = NULL;
+			joblist->tail = localNode.prev;
+		}
+	}
+	else if (localNode.prev == NULL) {
+		localNode.next->prev = NULL;
+		joblist->head = localNode.next;
+	}
+	else {
+		localNode.prev->next = localNode.next;
+		localNode.next->prev = localNode.prev;
+	}
 	struct job* givenJob = localNode.data;
 	free(givenJob->input);
 	free(givenJob);
+//	free(temp);
 }
 
 // signal handler for SIGCHLD
@@ -51,7 +69,6 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 				sigprocmask(SIG_BLOCK, &new_set, &old_set);
 				temp.data->status = suspended;
 				// kill(temp.data->pid, SIGCONT);
-				insertAtHead(joblist, &temp);
 				printf("process %d suspended successfully.", temp.data->pid);
 				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
 				break;
@@ -72,22 +89,25 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 
 // singal hanlder for SIGTSTP (ctrl-z)
 void sig_handler_ctrlz(int signum){
-    // ignore SIGQUIT, SIGTERM and SIGTSTP(process suspension with Control-Z) 
-    // so the shell cannot be interrupted
+	// ignore SIGQUIT, SIGTERM and SIGTSTP(process suspension with Control-Z) 
+	// so the shell cannot be interrupted
 	signal(signum,SIG_IGN);
-    // send a SIGSTOP signal to the process currently executing in the 
-    // foreground (depending on implementation-->we don't need to). 
+	// send a SIGSTOP signal to the process currently executing in the 
+	// foreground (depending on implementation-->we don't need to). 
 	struct Node* iter=joblist->head;
 	while (iter!=NULL) {
 		if (iter->data->state==fg) {
 			kill(iter->data->pid, SIGSTOP);
-			iter->data->status=running;
+			iter->data->status=suspended;
 			iter->data->state=bg;
 			// return with a new prompt
 			parserMain();	
-			execute();	
+			execute();
+			iter = NULL;	
 		}
-		iter=iter->next;	// move onto the next on the job list
+		else {
+			iter=iter->next;	// move onto the next on the job list
+		}
 	}
 }
 
