@@ -73,9 +73,7 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 
 
 int main() {
-	joblist->head = NULL;
-	joblist->tail = NULL;
-	joblist->i = 0;
+	joblist=init_list();
 
 	//mallocing space for shell settings termios
 	shell_terminal_settings = (struct termios *) malloc(sizeof(struct termios));
