@@ -25,7 +25,7 @@ enum procLoc{BG, FG} commandLoc;
 
 void specChar(char c);
 int isSpecChar(char c);
-bool builtIn(char* c, int args);
+bool builtIn(char* c, int argc, char *argv[]);
 void runProg(char *args[]);
 void execute();
 

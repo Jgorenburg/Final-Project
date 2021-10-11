@@ -61,7 +61,6 @@ void runProg(char* args[]) {
 		}
 
 		struct job* newJob = initJob(pid, "placeholder", &job_termios);
-		joblist->i++;
 		setState(newJob, commandLoc);
 		struct Node* jobNode = createNewNode(newJob);
 		insertAtHead(joblist, jobNode);
@@ -75,7 +74,7 @@ void runProg(char* args[]) {
 }
 
 
-bool builtIn(char* input, int args){
+bool builtIn(char* input, int argc, char*argv[]){
 	printf("%s\n", input);
 	if(strcmp(input, "kill") == 0){
 		if(argc == 1){
@@ -89,8 +88,26 @@ bool builtIn(char* input, int args){
 		if(joblist->i == 0){
 			printf("no jobs in the background");
 		}
-		else if (args > 0) {
+		else if (argc > 0) {
 			// TODO: bg specific job
+			int id;
+			if (sscanf(argv[1], "%d", &id) == 0) {
+				printf("error: %s not an int\n", argv[1]);
+			}
+			else {
+				struct Node* newBG = findJobByJobId(joblist, id);
+				if (newBG == NULL) {
+					printf("error: %d not a valid job\n", id);
+				}
+				else if (newBG->data->status != suspended) {
+					printf("job %d is already running in the background\n", id);
+				}
+				else {
+					newBG->data->state = bg;
+					newBG->data->status = running;
+					kill(newBG->data->pid, SIGCONT);	
+				}
+			} 
 		}
 		else{
 			struct Node* temp = joblist->head;
@@ -126,24 +143,24 @@ void execute() {
 			specChar(argArray[i][0]);
 			int numArgs = i - startPos;
 			if (numArgs > 0) {
-				if (!builtIn(argArray[startPos], numArgs)){
 
-
-					char *args[numArgs + 1];
-					for (int j = 0; j <= numArgs; j++) {
-						args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
-					}
-					for (int j = 0; j < numArgs; j++) {
-						strcpy(args[j], argArray[startPos + j]);
-					}
-					args[numArgs] = NULL;
-					runProg(args);	
-
-
-					for (int j = 0; j <= numArgs; j++) {
-						free(args[j]);
-					}
+				char *args[numArgs + 1];
+				for (int j = 0; j <= numArgs; j++) {
+					args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
 				}
+				for (int j = 0; j < numArgs; j++) {
+					strcpy(args[j], argArray[startPos + j]);
+				}
+				args[numArgs] = NULL;
+
+				if (!builtIn(argArray[startPos], numArgs, args)){
+					runProg(args);	
+				}
+
+				for (int j = 0; j <= numArgs; j++) {
+					free(args[j]);
+				}
+
 			}
 			startPos = i + 1;
 		}
@@ -151,22 +168,23 @@ void execute() {
 	}
 	int numArgs = i - startPos;
 	if (numArgs > 0) {
-		if (!builtIn(argArray[startPos], numArgs)) {
-			char *args[numArgs + 1];
-			for (int j = 0; j <= numArgs; j++) {
-				args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
-			}
+		char *args[numArgs + 1];
+		for (int j = 0; j <= numArgs; j++) {
+			args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
+		}
 
-			for (int j = 0; j < numArgs; j++) {
-				strcpy(args[j], argArray[startPos + j]);
-			}
-			args[numArgs] = NULL;
+		for (int j = 0; j < numArgs; j++) {
+			strcpy(args[j], argArray[startPos + j]);
+		}
+		args[numArgs] = NULL;
+
+		if (!builtIn(argArray[startPos], numArgs, args)) {
 			runProg(args);
-
-			for (int j = 0; j <= numArgs; j++) {
-				free(args[j]);
-			}	
+		}
+		for (int j = 0; j <= numArgs; j++) {
+			free(args[j]);
 		}	
-	}
+	}	
+
 }
 

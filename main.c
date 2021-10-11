@@ -32,7 +32,7 @@ void destructoreJob(struct Node* temp){
 
 // signal handler for SIGCHLD
 static void signal_action_handler(int sig, siginfo_t *si, void *unused){
-	struct Node temp = *findJobByJobId(joblist, (int) si->si_pid);
+	struct Node temp = *findJobByPID(joblist, (int) si->si_pid);
 	//now cases
 	if(sig == SIGCHLD){
 		int status = si->si_code;
