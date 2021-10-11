@@ -28,6 +28,7 @@ void specChar(char c) {
 
 void runProg(char* args[]) {
 	pid_t pid;
+	int status;
 
 	printf("before fork\n");
 
@@ -52,7 +53,7 @@ void runProg(char* args[]) {
 
 		// the shell does not stop if the process is running in the bg
 		if (commandLoc == FG) {
-			pause();
+			waitpid(pid, &status, 0); 
 		}
 		else {
 			printf("error: fork did not run properly");
@@ -79,13 +80,21 @@ void execute() {
 				specChar(argArray[i][0]);
 				int numArgs = i - startPos;
 				if (numArgs > 0) {
-					char args[numArgs + 1][MAX_CHARS_PER_LINE];
+					char *args[numArgs + 1];
+					for (int j = 0; j <= numArgs; j++) {
+						args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
+					}
 					for (int j = 0; j < numArgs; j++) {
 						strcpy(args[j], argArray[startPos + j]);
 					}
-					char *empty = "";
-					strcpy(args[numArgs], empty);
-				//	runProg(args);	
+					args[numArgs] = NULL;
+					runProg(args);	
+
+
+					for (int j = 0; j <= numArgs; j++) {
+						free(args[j]);
+					}
+
 					startPos = i + 1;
 				}
 				startPos = i + 1;
@@ -101,19 +110,16 @@ void execute() {
 			for (int j = 0; j <= numArgs; j++) {
 				args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
 			}
-			
+
 			for (int j = 0; j < numArgs; j++) {
 				strcpy(args[j], argArray[startPos + j]);
 			}
-			//char *empty = "";
-			//strcpy(args[numArgs], empty);
 			args[numArgs] = NULL;
 			runProg(args);
 
-			/*for (int j = 0; j <= numArgs; j++) {
+			for (int j = 0; j <= numArgs; j++) {
 				free(args[j]);
-			}*/
-			free(args);
+			}
 		}
 	}	
 }

@@ -15,8 +15,8 @@
 #ifndef NULL
 #define NULL (void *) 0
 #endif
-#define MAX_CMD 10
-#define MAX_CMD_LEN 100
+#define MAX_CMD MAX_NUM_LINES
+#define MAX_CMD_LEN MAX_LINE_SIZE
 #define SYMBOLS "&%;|><"
 
 // global variables
