@@ -23,6 +23,8 @@ struct LinkedList{
 
 
 //methods 
+struct LinkedList* init_list();
+void free_list(struct LinkedList *aaa);
 void insertAtHead(struct LinkedList* jobList, struct Node* node);
 struct Node* createNewNode(struct job* jobtoadd);
 void insertAtTail(struct LinkedList* jobList, struct Node* node);
