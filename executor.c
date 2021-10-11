@@ -53,11 +53,11 @@ void runProg(char* args[]) {
 
 		// TODO: figure out giving input to job
 		struct termios job_termios;
-		
+
 		if(tcgetattr(STDIN_FILENO, &job_termios) < 0) {
-        		printf("error: assigning termios failed");
+			printf("error: assigning termios failed");
 			return;
-        	}
+		}
 
 		struct job* newJob = initJob(pid, "placeholder", &job_termios);
 		joblist->i++;
@@ -77,18 +77,18 @@ void runProg(char* args[]) {
 }
 
 bool builtIn(char* input){
-	if(strcmp(input, "kill")){
+	if(strcmp(input, "kill")==0){
 		return true;
-	} else if(strcmp(input, "fg")){
-		return true;
-	}
-	 else if(strcmp(input, "bg")){
+	} else if(strcmp(input, "fg")==0){
 		return true;
 	}
-	 else if(strcmp(input, "jobs")){
+	else if(strcmp(input, "bg")==0){
 		return true;
 	}
-	 else if(strcmp(input, "exit")){
+	else if(strcmp(input, "jobs")==0){
+		return true;
+	}
+	else if(strcmp(input, "exit")==0){
 		return true;
 	}
 	else{
@@ -126,7 +126,7 @@ void execute() {
 		} else if(strcmp(argArray[startPos], "exit")){
 			exit(0);
 		}
-	
+
 	}
 	else {
 		while (i < argc) {
