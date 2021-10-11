@@ -1,0 +1,24 @@
+#hw3 tests - group
+
+ctrl-c 
+ctrl-d
+!!  # for checking invalid input
+hello!  # for checking invalid input
+man
+cat    README.txt   # for checking whitespaces
+ls
+ps
+who; ls
+sleep 4
+sleep 4 (then) ctrl-c
+sleep 4 (then) ctrl-d
+sleep 4 (then) ctrl-z (then) fg
+sleep 4 (then) ctrl-z (then) fg (then) ctrl-z (then) fg
+sleep 10 & (then) jobs (then) fg (then) jobs (then) bg (then) jobs
+p 12 (then) jobs (then) ctrl-z (then) jobs (then) kill %xxx (then) jobs
+p 10& p 8& p 4& (then) jobs (then) fg %xxx (then) jobs
+p 12 (then) jobs (then) ctrl-z (then) jobs (then) kill %xxx (then) jobs
+p 10& p 8& p 4& (then) jobs (then) fg %xxx %xxx %xxx (then) jobs (then) bg %xxx %xxx %xxx (then) jobs (then) kill %xxx %xxx (then) jobs 
+# to test fg/bg/kill of numbered jobs
+
+Memory leaks and errors
