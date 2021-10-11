@@ -39,9 +39,25 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 		sigset_t new_set, old_set;
 		switch(status){
 			case CLD_EXITED:
+				printf("process %d exited.\n", temp.data->pid);
+				// sigset_t new_set, old_set;
+				sigemptyset(&new_set);
+				sigaddset(&new_set, SIGCHLD);
+				sigprocmask(SIG_BLOCK, &new_set, &old_set);
+				destructoreJob(&temp);
+				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
+				break;
 			case CLD_DUMPED:
+				printf("process %d dumped.\n", temp.data->pid);
+				// sigset_t new_set, old_set;
+				sigemptyset(&new_set);
+				sigaddset(&new_set, SIGCHLD);
+				sigprocmask(SIG_BLOCK, &new_set, &old_set);
+				destructoreJob(&temp);
+				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
+				break;
 			case CLD_KILLED: 
-				printf("process %d killed.", temp.data->pid);
+				printf("process %d killed.\n", temp.data->pid);
 				// sigset_t new_set, old_set;
 				sigemptyset(&new_set);
 				sigaddset(&new_set, SIGCHLD);
@@ -57,7 +73,7 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 				temp.data->status = suspended;
 				// kill(temp.data->pid, SIGCONT);
 				insertAtHead(joblist, &temp);
-				printf("process %d suspended successfully.", temp.data->pid);
+				printf("process %d suspended successfully.\n", temp.data->pid);
 				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
 				break;
 			case CLD_CONTINUED:
@@ -66,7 +82,7 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 				sigaddset(&new_set, SIGCHLD);
 				sigprocmask(SIG_BLOCK, &new_set, &old_set);
 				temp.data->status = running;
-				printf("process %d resumed successfully.", temp.data->pid);
+				printf("process %d resumed successfully.\n", temp.data->pid);
 				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
 				break; 
 			default:

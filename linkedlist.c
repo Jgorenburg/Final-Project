@@ -10,9 +10,17 @@ struct LinkedList* init_list() {
 }
 
 // Destructor for ArrayList
+// start from head and traverse the list to free all nodes recursively
+void free_nodes(struct Node* item) {
+    if (item==NULL) {return;}
+    free_nodes(item->next);
+    free(item->data);
+	free(item);
+}
+
 void free_list(struct LinkedList *aaa) {
-    free(aaa->head);
-	free(aaa->tail);
+    struct Node* head=aaa->head;
+    free_nodes(head);
     free(aaa);
 }
 
