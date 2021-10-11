@@ -18,7 +18,7 @@ struct Node {
 struct LinkedList{
 	struct Node* head;
 	struct Node* tail;
-	int i;
+	int i ;
 };
 
 
