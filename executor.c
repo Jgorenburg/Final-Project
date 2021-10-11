@@ -74,24 +74,43 @@ void runProg(char* args[]) {
 	}
 }
 
-bool builtIn(char* input){
-	if(strcmp(input, "kill")==0){
+bool builtIn(char* input, int args){
+	printf("%s\n", input);
+	if(strcmp(input, "kill") == 0){
+		if(argc == 1){
+			printf("can't kill as no job pid given");
+		}
+		else if(1 == 0 ){
+
+		}
 		return true;
-	} else if(strcmp(input, "fg")==0){
+	} else if(strcmp(input, "bg") == 0){
+		if(joblist->i == 0){
+			printf("no jobs in the background");
+		}
+		else if (args > 0) {
+			// TODO: bg specific job
+		}
+		else{
+			struct Node* temp = joblist->head;
+			while(temp->data->status != suspended && temp != NULL){
+				printf("%d", temp->data->status );
+				temp = temp->next;
+			}
+			if(temp->data->status == suspended){
+				kill(temp->data->pid, SIGCONT);
+			}
+		}
 		return true;
-	}
-	else if(strcmp(input, "bg")==0){
+	} else if(strcmp(input, "fg") == 0){
 		return true;
-	}
-	else if(strcmp(input, "jobs")==0){
-		return true;
-	}
-	else if(strcmp(input, "exit")==0){
-		return true;
+	} else if(strcmp(input, "exit") == 0){
+		exit(0);
 	}
 	else{
 		return false;
-	}
+	}	
+
 }
 void execute() {
 
@@ -99,41 +118,14 @@ void execute() {
 
 	int i = 0;
 	int startPos = i;
-	if (builtIn(argArray[startPos])) {
-		if(strcmp(argArray[startPos], "kill") == 0){
-			if(argc == 1){
-				printf("can't kill as no job pid given");
-			} else if(1 == 0 ){
-
-			}
-		} else if(strcmp(argArray[startPos], "bg") == 0){
-			if(joblist->i == 0){
-				printf("no jobs in the background");
-			}else{
-				struct Node* temp = joblist->head;
-				while(temp->data->status != suspended && temp != NULL){
-					printf("%d", temp->data->status );
-					temp = temp->next;
-				}
-				if(temp->data->status == suspended){
-					kill(temp->data->pid, SIGCONT);
-				}
-			}
-		} else if(strcmp(argArray[startPos], "fg") == 0){
-			printf("%s", argArray[1]);
-		} else if(strcmp(argArray[startPos], "exit") == 0){
-			exit(0);
-		}
-
-	}
-	else {
-		while (i < argc) {
-			int pos;
-			if ((pos = isSpecChar(argArray[i][0])) >= 0) {
-				// implement special chars
-				specChar(argArray[i][0]);
-				int numArgs = i - startPos;
-				if (numArgs > 0) {
+	while (i < argc) {
+		int pos;
+		if ((pos = isSpecChar(argArray[i][0])) >= 0) {
+			// implement special chars
+			specChar(argArray[i][0]);
+			int numArgs = i - startPos;
+			if (numArgs > 0) {
+				if (!builtIn(argArray[startPos], numArgs)){
 					char *args[numArgs + 1];
 					for (int j = 0; j <= numArgs; j++) {
 						args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
@@ -148,16 +140,15 @@ void execute() {
 					for (int j = 0; j <= numArgs; j++) {
 						free(args[j]);
 					}
-
-					startPos = i + 1;
 				}
-				startPos = i + 1;
 			}
-			i++;	
+			startPos = i + 1;
 		}
-		int numArgs = i - startPos;
-		if (numArgs > 0) {
-			//	char args[numArgs + 1][MAX_CHARS_PER_LINE];
+		i++;	
+	}
+	int numArgs = i - startPos;
+	if (numArgs > 0) {
+		if (!builtIn(argArray[startPos], numArgs)) {
 			char *args[numArgs + 1];
 			for (int j = 0; j <= numArgs; j++) {
 				args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
@@ -171,8 +162,8 @@ void execute() {
 
 			for (int j = 0; j <= numArgs; j++) {
 				free(args[j]);
-			}
-		}
-	}	
+			}	
+		}	
+	}
 }
 
