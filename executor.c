@@ -37,7 +37,9 @@ void runProg(char* args[]) {
 	// child's code
 
 	if ((pid = fork()) == 0) {
-
+		//default signal handeling for child
+        
+        // setpgid(0, 0);
 		char * command = args[0];
 		//command = strtok(args[0], "\0");
 
@@ -77,7 +79,7 @@ void runProg(char* args[]) {
 }
 
 bool builtIn(char* input){
-	printf("inside builtIn");
+	printf("inside builtIn loon \n");
 	if(strcmp(input, "kill")==0){
 		return true;
 	} else if(strcmp(input, "fg")==0){
@@ -103,13 +105,13 @@ void execute() {
 	int i = 0;
 	int startPos = i;
 	if (builtIn(argArray[startPos])) {
-		if(strcmp(argArray[startPos], "kill")){
+		if(strcmp(argArray[startPos], "kill")==0){
 			if(argc == 1){
 				printf("can't kill as no job pid given");
 			} else if(1 == 0 ){
 
 			}
-		} else if(strcmp(argArray[startPos], "bg")){
+		} else if(strcmp(argArray[startPos], "bg")==0){
 			if(joblist->i == 0){
 				printf("no jobs in the background");
 			}else{
@@ -122,7 +124,7 @@ void execute() {
 					kill(temp->data->pid, SIGCONT);
 				}
 			}
-		} else if(strcmp(argArray[startPos], "fg")){
+		} else if(strcmp(argArray[startPos], "fg")==0){
 			printf("%s", argArray[1]);
 		}
 	

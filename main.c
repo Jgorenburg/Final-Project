@@ -84,6 +84,7 @@ int main() {
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
+	// signal(SIGTSTP, SIG_IGN);
 
 	//putiing shell in its out group 
 	if(setpgid(shell_id, shell_id) < 0){
