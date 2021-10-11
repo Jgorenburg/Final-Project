@@ -102,13 +102,13 @@ void execute() {
 	int i = 0;
 	int startPos = i;
 	if (builtIn(argArray[startPos])) {
-		if(strcmp(argArray[startPos], "kill")){
+		if(strcmp(argArray[startPos], "kill") == 0){
 			if(argc == 1){
 				printf("can't kill as no job pid given");
 			} else if(1 == 0 ){
 
 			}
-		} else if(strcmp(argArray[startPos], "bg")){
+		} else if(strcmp(argArray[startPos], "bg") == 0){
 			if(joblist->i == 0){
 				printf("no jobs in the background");
 			}else{
@@ -121,9 +121,9 @@ void execute() {
 					kill(temp->data->pid, SIGCONT);
 				}
 			}
-		} else if(strcmp(argArray[startPos], "fg")){
+		} else if(strcmp(argArray[startPos], "fg") == 0){
 			printf("%s", argArray[1]);
-		} else if(strcmp(argArray[startPos], "exit")){
+		} else if(strcmp(argArray[startPos], "exit") == 0){
 			exit(0);
 		}
 

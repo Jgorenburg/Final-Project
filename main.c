@@ -97,10 +97,11 @@ int main() {
 
 	struct sigaction sigact;
 	sigact.sa_flags = SA_SIGINFO;
+	sigfillset(&sigact.sa_mask);
 	sigact.sa_sigaction = signal_action_handler;
 	sigaction(SIGCHLD, &sigact, NULL);
 
-	joblist = (struct LinkedList*)malloc(sizeof(*joblist));
+	//joblist = (struct LinkedList*)malloc(sizeof(*joblist));
 	
 // 	// store settings for shell (outside the while loop) in a global termios (pid and termios)
 // 	// in a global termios
