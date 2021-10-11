@@ -1,5 +1,20 @@
 #include "linkedlist.h"
 
+// initialize ArrayList with assigned size
+struct LinkedList* init_list() { 
+    struct LinkedList* aaa = malloc(sizeof(struct LinkedList));
+    aaa->head = NULL;
+	aaa->tail = NULL;
+    aaa->i=0;    // length is 0 at initialization
+    return aaa; // return a pointer to the LinkedList that is created
+}
+
+// Destructor for ArrayList
+void free_list(struct LinkedList *aaa) {
+    free(aaa->head);
+	free(aaa->tail);
+    free(aaa);
+}
 
 struct Node* createNewNode(struct job* jobtoadd){
 	struct Node* newJob = (struct Node *) malloc(sizeof(struct Node));
