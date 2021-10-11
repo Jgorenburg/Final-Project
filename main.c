@@ -18,12 +18,16 @@ struct termios* shell_terminal_settings;
 
 //destructor jobs
 void destructoreJob(struct Node* temp){
-	struct Node localNode = *temp;
-	localNode.prev = localNode.next;
-	struct job* givenJob = localNode.data;
+	struct Node* localNode = temp;
+	if(localNode->next != NULL){
+		localNode->prev = localNode->next;
+	}
+	if(localNode->next != NULL){
+		localNode->next->prev = localNode->prev;
+	}
+	struct job* givenJob = localNode->data;
 	free(givenJob->input);
-	free(givenJob->ioSettings);
-	free(temp);
+	free(givenJob);
 }
 
 // signal handler for SIGCHLD
@@ -37,7 +41,7 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 			case CLD_EXITED:
 			case CLD_DUMPED:
 			case CLD_KILLED: 
-				printf("process %d killed successfully.", temp.data->pid);
+				printf("process %d killed.", temp.data->pid);
 				// sigset_t new_set, old_set;
 				sigemptyset(&new_set);
 				sigaddset(&new_set, SIGCHLD);

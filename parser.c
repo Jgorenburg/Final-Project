@@ -50,10 +50,6 @@ int parserMain() {
 	buffer=readline(">> ");
 	init_arg();
 	if (parse(buffer)==1) {printf("\n");}    // handle ctrl-d and parse input
-	else {
-		printf("%d\n", argc); 
-		for (j=0;j<argc+1;j++) {printf("%s\n", argArray[j]);}
-	}
 	free(buffer);
 	// }
 

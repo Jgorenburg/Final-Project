@@ -31,6 +31,7 @@ void insertAtTail(struct LinkedList* jobList, struct Node* node);
 struct Node* findJobByJobId(struct LinkedList* jobList, int id);
 void printForward(struct LinkedList* jobList);
 void printBackward(struct LinkedList* jobList);
+void printJobs();
 
 
 #endif

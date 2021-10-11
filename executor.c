@@ -22,6 +22,8 @@ void specChar(char c) {
 	switch(c) {
 		case '&' :
 			commandLoc = BG;
+		case ';' :
+			// do nothing
 		default :
 			printf("special char %c not currently handled", c);
 	}	
@@ -31,8 +33,6 @@ void specChar(char c) {
 void runProg(char* args[]) {
 	pid_t pid;
 	int status;
-
-	printf("before fork\n");
 
 	// child's code
 
@@ -128,6 +128,9 @@ void execute() {
 			printf("%s", argArray[1]);
 		} else if(strcmp(argArray[startPos], "exit") == 0){
 			exit(0);
+		}
+		else if(strcmp(argArray[startPos], "jobs") == 0){
+			printJobs();
 		}
 
 	}
