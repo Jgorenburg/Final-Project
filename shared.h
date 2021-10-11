@@ -5,7 +5,7 @@
 #include "linkedlist.h"
 
 #define ML 10
-#define MS 100
+#define MS 103
 // global variables
 extern struct LinkedList* joblist;
 

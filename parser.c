@@ -47,12 +47,11 @@ int parserMain() {
 	char* buffer;
 	// while (1) {
 	//    char* buffer;
-	buffer=readline(">> ");
+	buffer=readline("\n>> ");
 	init_arg();
 	if (parse(buffer)==1) {printf("\n");}    // handle ctrl-d and parse input
 	free(buffer);
 	// }
-
 	return 0;
 }
 

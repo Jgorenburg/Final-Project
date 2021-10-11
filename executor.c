@@ -8,7 +8,7 @@
 // and the index of c in specialChar if it is
 int isSpecChar(char c) {
 	for (int i = 0; i < strlen(specialChars); i++) {
-		if (c == specialChars[i]) {
+		if (c != '%' && c == specialChars[i]) {
 			return i;
 		}
 	}
@@ -67,12 +67,12 @@ void runProg(char* args[]) {
 		while (args[size] != NULL) {
 			size++;
 		}
-		printf("%d\n", size);
 		char * input = malloc(argc * MAX_CHARS_PER_LINE * sizeof(char));
 
-		for (int i = 0; i < size; i++) {
-			strcat(input, args[i]);
+		strcpy(input, args[0]);
+		for (int i = 1; i < size; i++) {
 			strcat(input, " ");
+			strcat(input, args[i]);
 		}
 
 		struct job* newJob = initJob(pid, input, &job_termios);
@@ -91,11 +91,51 @@ void runProg(char* args[]) {
 
 bool builtIn(char* input, int argc, char*argv[]){
 	if(strcmp(input, "kill") == 0){
-		if(argc == 1){
+		if(argc < 2){
 			printf("can't kill as no job pid given");
 		}
-		else if(1 == 0 ){
-
+		else {
+			int id;
+			if (argc > 2 && strcmp(argv[1], "-9") == 0) {
+				if (strcmp(argv[2], "%") != 0) {
+					printf("error: need a %% \n");
+				}	
+				else if (argc < 4) {
+					printf("error: not enough args");
+				}	
+				else if (sscanf(argv[3], "%d", &id) == 0) {
+					printf("error: %s is not an int\n", argv[3]);
+				}
+				else {
+					struct Node* job = findJobByJobId(joblist, id);
+					if (job == NULL) {
+						printf("error: %d not a valid job\n", id);
+					}
+					else {
+						kill(job->data->pid, SIGKILL);
+					}
+				}
+			}
+			else {
+				if (strcmp(argv[1], "%") != 0) {
+					printf("error: need a %% \n");
+				}
+				else if (argc < 3) {
+					printf("error: not enough args");
+				}
+				else if (sscanf(argv[2], "%d", &id) == 0) {
+					printf("error: %s is not an int\n", argv[2]);
+				}
+				else {
+					struct Node* job = findJobByJobId(joblist, id);
+					if (job == NULL) {
+						printf("error: %d not a valid job\n", id);
+					}
+					else {
+						kill(job->data->pid, SIGTERM);
+					}
+				}
+			}
 		}
 		return true;
 	} else if(strcmp(input, "jobs") == 0) {
@@ -105,10 +145,14 @@ bool builtIn(char* input, int argc, char*argv[]){
 		if(joblist->i == 0){
 			printf("no jobs to background");
 		}
-		else if (argc > 1) {
+		int lookPos = 1;
+		if (argc > 2 && strcmp(argv[1], "%") == 0) {
+			lookPos++;
+		}
+		if (argc > lookPos) {
 			int id;
-			if (sscanf(argv[1], "%d", &id) == 0) {
-				printf("error: %s not an int\n", argv[1]);
+			if (sscanf(argv[lookPos], "%d", &id) == 0) {
+				printf("error: %s not an int\n", argv[lookPos]);
 			}
 			else {
 				struct Node* newBG = findJobByJobId(joblist, id);
@@ -142,10 +186,14 @@ bool builtIn(char* input, int argc, char*argv[]){
 		if(joblist->i == 0){
 			printf("no jobs to foreground");
 		}
-		else if (argc > 1) {
+		int lookPos = 1;
+		if (argc > 2 && strcmp(argv[1], "%") == 0) {
+			lookPos++;
+		}
+		if (argc > lookPos) {
 			int id;
-			if (sscanf(argv[1], "%d", &id) == 0) {
-				printf("error: %s not an int\n", argv[1]);
+			if (sscanf(argv[lookPos], "%d", &id) == 0) {
+				printf("error: %s not an int\n", argv[lookPos]);
 			}
 			else {
 				struct Node* newFG = findJobByJobId(joblist, id);
@@ -153,21 +201,29 @@ bool builtIn(char* input, int argc, char*argv[]){
 					printf("error: %d not a valid job\n", id);
 				}
 				else {
+					if (newFG->data->status == suspended){
+						kill(newFG->data->pid, SIGCONT);
+					}
 					newFG->data->state = fg;
 					newFG->data->status = running;
-					kill(newFG->data->pid, SIGCONT);	
-					waitpid(newFG->data->pid, &status, 0);
+					int fg_pid = newFG->data->pid;
+					waitpid(fg_pid, &status, 0);
+					waitpid(fg_pid, &status, 0);
+
 				}
 			} 
 		}
 		else{
 			struct Node* temp = joblist->head;
 			if(temp != NULL){
+				if (temp->data->status == suspended){
+					kill(temp->data->pid, SIGCONT);
+				}
 				temp->data->state = fg;
 				temp->data->status = running;
-				kill(temp->data->pid, SIGCONT);
-				waitpid(temp->data->pid, &status, 0);
-				printf("done waiting\n");
+				int fg_pid = temp->data->pid;
+				waitpid(fg_pid, &status, 0);
+				waitpid(fg_pid, &status, 0);
 			}	
 		}
 		return true;
@@ -240,7 +296,6 @@ void execute() {
 		for (int j = 0; j <= numArgs; j++) {
 			free(args[j]);
 		}	
-
 		if (quitting) {	
 			free_list(joblist);
 			exit(0);

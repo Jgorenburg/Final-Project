@@ -54,7 +54,7 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 			case CLD_EXITED:
 			case CLD_DUMPED:
 			case CLD_KILLED: 
-				printf("process %d killed successfully.", temp.data->pid);
+				//printf("process %d killed successfully.", temp.data->pid);
 				// sigset_t new_set, old_set;
 				sigemptyset(&new_set);
 				sigaddset(&new_set, SIGCHLD);
@@ -69,7 +69,7 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 				sigprocmask(SIG_BLOCK, &new_set, &old_set);
 				temp.data->status = suspended;
 				// kill(temp.data->pid, SIGCONT);
-				printf("process %d suspended successfully.", temp.data->pid);
+			//	printf("process %d suspended successfully.", temp.data->pid);
 				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
 				break;
 			case CLD_CONTINUED:
@@ -78,7 +78,7 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 				sigaddset(&new_set, SIGCHLD);
 				sigprocmask(SIG_BLOCK, &new_set, &old_set);
 				temp.data->status = running;
-				printf("process %d resumed successfully.", temp.data->pid);
+			//	printf("process %d resumed successfully.", temp.data->pid);
 				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
 				break; 
 			default:
