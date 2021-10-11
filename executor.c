@@ -9,7 +9,6 @@
 // returns -1 if c is not a special char
 // and the index of c in specialChar if it is
 int isSpecChar(char c) {
-	//char *specialChars = "&%;|><";
 	for (int i = 0; i < strlen(specialChars); i++) {
 		if (c == specialChars[i]) {
 			return i;
@@ -22,8 +21,10 @@ void specChar(char c) {
 	switch(c) {
 		case '&' :
 			commandLoc = BG;
+			break;
 		case ';' :
 			// do nothing
+			break;
 		default :
 			printf("special char %c not currently handled", c);
 	}	
@@ -69,9 +70,6 @@ void runProg(char* args[]) {
 		// the shell does not stop if the process is running in the bg
 		if (commandLoc == FG) {
 			waitpid(pid, &status, 0); 
-		}
-		else {
-			printf("error: fork did not run properly");
 		}
 	}
 }
