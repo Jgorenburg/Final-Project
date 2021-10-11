@@ -77,7 +77,6 @@ void runProg(char* args[]) {
 }
 
 bool builtIn(char* input){
-	printf("inside builtIn");
 	if(strcmp(input, "kill")){
 		return true;
 	} else if(strcmp(input, "fg")){
@@ -115,7 +114,7 @@ void execute() {
 			}else{
 				struct Node* temp = joblist->head;
 				while(temp->data->status != suspended && temp != NULL){
-					printf("%s", temp->data->status );
+					printf("%d", temp->data->status );
 					temp = temp->next;
 				}
 				if(temp->data->status == suspended){
@@ -124,6 +123,8 @@ void execute() {
 			}
 		} else if(strcmp(argArray[startPos], "fg")){
 			printf("%s", argArray[1]);
+		} else if(strcmp(argArray[startPos], "exit")){
+			exit(0);
 		}
 	
 	}
