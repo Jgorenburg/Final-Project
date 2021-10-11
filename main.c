@@ -81,7 +81,7 @@ void sig_handler_ctrlz(int signum){
 	while (iter!=NULL) {
 		if (iter->data->state==fg) {
 			kill(iter->data->pid, SIGSTOP);
-			iter->data->status=running;
+			iter->data->status=suspended;
 			iter->data->state=bg;
 			// return with a new prompt
 			parserMain();	
