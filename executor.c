@@ -78,18 +78,18 @@ void runProg(char* args[]) {
 
 bool builtIn(char* input){
 	printf("inside builtIn");
-	if(strcmp(input, "kill")){
+	if(strcmp(input, "kill")==0){
 		return true;
-	} else if(strcmp(input, "fg")){
-		return true;
-	}
-	 else if(strcmp(input, "bg")){
+	} else if(strcmp(input, "fg")==0){
 		return true;
 	}
-	 else if(strcmp(input, "jobs")){
+	 else if(strcmp(input, "bg")==0){
 		return true;
 	}
-	 else if(strcmp(input, "exit")){
+	 else if(strcmp(input, "jobs")==0){
+		return true;
+	}
+	 else if(strcmp(input, "exit")==0){
 		return true;
 	}
 	else{
