@@ -36,8 +36,10 @@ void runProg(char* args[]) {
 	// child's code
 
 	if ((pid = fork()) == 0) {
-		//default signal handeling for child
-
+		// reset default signal handeling for child
+        	for (int signum=0;signum<=64;signum++) {
+			signal(signum, SIG_DFL);
+		}
 		// setpgid(0, 0);
 		char * command = args[0];
 		//command = strtok(args[0], "\0");
