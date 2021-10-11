@@ -1,6 +1,7 @@
 #include <termios.h>
 #include <signal.h>
 #include "main.h"
+#include "linkedlist.h"
 
 // #include <signal.h>
 // #include <termios.h>
@@ -11,6 +12,7 @@
 //global variuable 
 int shell_id;
 struct termios* shell_terminal_settings;
+
 
 // // signal handler for SIGCHLD
 // static void signal_handler(int sig, siginfo_t *si, void *unused){
@@ -44,6 +46,63 @@ struct termios* shell_terminal_settings;
 
 int main() {
 /*
+=======
+//destructor jobs
+void destructoreJob(struct Node* temp){
+	struct Node localNode = *temp;
+	localNode.prev = localNode.next;
+	struct job* givenJob = localNode.data;
+	free(givenJob->input);
+	free(givenJob->ioSettings);
+	free(temp);
+}
+
+// signal handler for SIGCHLD
+static void signal_action_handler(int sig, siginfo_t *si, void *unused){
+	struct Node temp = *findJobByJobId(joblist, (int) si->si_pid);
+	//now cases
+	if(sig == SIGCHLD){
+		int status = si->si_code;
+		switch(status){
+			case CLD_EXITED:
+			case CLD_DUMPED:
+			case CLD_KILLED: 
+				printf("process %d killed successfully.", temp.data->pid);
+				sigset_t set;
+				sigemptyset(&set);
+				sigaddset(&set, SIGCHLD);
+				sigprocmask(SIG_BLOCK, &set, SIGCHLD);
+				destructoreJob(&temp);
+				sigprocmask(SIG_UNBLOCK, &set, SIGCHLD);
+				break;
+			case CLD_STOPPED:
+				sigset_t set;
+				sigemptyset(&set);
+				sigaddset(&set, SIGCHLD);
+				sigprocmask(SIG_BLOCK, &set, SIGCHLD);
+				temp.data->status = suspended;
+				printf("process %d suspended successfully.", temp.data->pid);
+				sigprocmask(SIG_UNBLOCK, &set, SIGCHLD);
+				break;
+			case CLD_CONTINUED:
+				sigset_t set;
+				sigemptyset(&set);
+				sigaddset(&set, SIGCHLD);
+				sigprocmask(SIG_BLOCK, &set, SIGCHLD);
+				temp.data->status = running;
+				printf("process %d resumed successfully.", temp.data->pid);
+				sigprocmask(SIG_UNBLOCK, &set, SIGCHLD);
+				break; 
+			default:
+				break;
+		}
+	}
+}
+
+
+int main() {
+
+>>>>>>> e3589cb20b03c771e419369414f9ba70f7f4fcd9
 	//mallocing space for shell settings termios
 	shell_terminal_settings = (struct termios *) malloc(sizeof(struct termios));
 	shell_id = getpid(); //stoding shellpid
@@ -66,7 +125,7 @@ int main() {
 
 	struct sigaction sigact;
 	sigact.sa_flags = SA_SIGINFO;
-	// sigact.sa_sigaction = signal_handler;
+	sigact.sa_sigaction = signal_action_handler;
 	sigaction(SIGCHLD, &sigact, NULL);
 
 */
@@ -97,4 +156,5 @@ int main() {
 		parserMain();	
 		execute();	
 	}
+	return 1;
 }
