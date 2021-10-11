@@ -14,7 +14,8 @@ struct LinkedList* init_list() {
 void free_nodes(struct Node* item) {
     if (item==NULL) {return;}
     free_nodes(item->next);
-    free(item->data);
+    // free(item->data);	// this is a job struct
+	free_job(item->data);
 	free(item);
 }
 
@@ -83,7 +84,7 @@ void printForward(struct LinkedList* jobList) {
 	if (temp == NULL)
 		printf("empty ll\n");
 	while(temp != NULL) {
-		printf("Job: %d\n", temp->data->pid );
+		printf("Job: %s\n", temp->data->input );
 		temp = temp->next;
 	}
 	printf("\n");
@@ -95,10 +96,29 @@ void printBackward(struct LinkedList* jobList) {
 	if (temp == NULL)
 		printf("empty ll\n");
 	while(temp != NULL) {
-		printf("Job: %d\n", temp->data->pid );
+		printf("Job: %s\n", temp->data->input );
 		temp = temp->prev;
 	}
 	printf("\n");
 }
+
+void printJobs()
+{
+        if (joblist->i == 0)
+                return;
+        struct Node* temp;
+		for(temp = joblist->head; temp != NULL; temp = temp->next){
+			printf("\t[%d]\t%s\t%s", temp->data->pid, temp->data->status, temp->data->input);
+			if (temp->next != NULL)
+            {
+                printf("|\n");
+            }
+            else
+            {
+                printf("\n");
+            }
+		}
+}
+
 
 

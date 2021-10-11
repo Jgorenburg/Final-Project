@@ -14,6 +14,11 @@ struct job* initJob(pid_t ID,  char* input, struct termios *ioSettings) {
 	return newJob;
 }
 
+// Destructor for jobs
+void free_job(struct job* item) {
+    free(item->input);
+	free(item);
+}
 
 int getID(const struct job j) {
 	return j.pid;

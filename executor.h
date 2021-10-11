@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <stdbool.h> 
+#include <signal.h>
 #include "shared.h"
 
 #define MAX_CHARS_PER_LINE MAX_LINE_SIZE

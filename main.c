@@ -18,9 +18,14 @@ struct termios* shell_terminal_settings;
 
 //destructor jobs
 void destructoreJob(struct Node* temp){
-	struct Node localNode = *temp;
-	localNode.prev = localNode.next;
-	struct job* givenJob = localNode.data;
+	struct Node* localNode = temp;
+	if(localNode->next != NULL){
+		localNode->prev = localNode->next;
+	}
+	if(localNode->next != NULL){
+		localNode->next->prev = localNode->prev;
+	}
+	struct job* givenJob = localNode->data;
 	free(givenJob->input);
 	free(givenJob);
 }
@@ -34,9 +39,25 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 		sigset_t new_set, old_set;
 		switch(status){
 			case CLD_EXITED:
+				printf("process %d exited.\n", temp.data->pid);
+				// sigset_t new_set, old_set;
+				sigemptyset(&new_set);
+				sigaddset(&new_set, SIGCHLD);
+				sigprocmask(SIG_BLOCK, &new_set, &old_set);
+				destructoreJob(&temp);
+				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
+				break;
 			case CLD_DUMPED:
+				printf("process %d dumped.\n", temp.data->pid);
+				// sigset_t new_set, old_set;
+				sigemptyset(&new_set);
+				sigaddset(&new_set, SIGCHLD);
+				sigprocmask(SIG_BLOCK, &new_set, &old_set);
+				destructoreJob(&temp);
+				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
+				break;
 			case CLD_KILLED: 
-				printf("process %d killed successfully.", temp.data->pid);
+				printf("process %d killed.\n", temp.data->pid);
 				// sigset_t new_set, old_set;
 				sigemptyset(&new_set);
 				sigaddset(&new_set, SIGCHLD);
@@ -52,7 +73,7 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 				temp.data->status = suspended;
 				// kill(temp.data->pid, SIGCONT);
 				insertAtHead(joblist, &temp);
-				printf("process %d suspended successfully.", temp.data->pid);
+				printf("process %d suspended successfully.\n", temp.data->pid);
 				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
 				break;
 			case CLD_CONTINUED:
@@ -61,7 +82,7 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 				sigaddset(&new_set, SIGCHLD);
 				sigprocmask(SIG_BLOCK, &new_set, &old_set);
 				temp.data->status = running;
-				printf("process %d resumed successfully.", temp.data->pid);
+				printf("process %d resumed successfully.\n", temp.data->pid);
 				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
 				break; 
 			default:
@@ -83,6 +104,7 @@ int main() {
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
+	signal(SIGTSTP, SIG_IGN);
 
 	//putiing shell in its out group 
 	if(setpgid(shell_id, shell_id) < 0){
@@ -101,8 +123,13 @@ int main() {
 	sigaction(SIGCHLD, &sigact, NULL);
 
 	//joblist = (struct LinkedList*)malloc(sizeof(*joblist));
-	
-// 	// store settings for shell (outside the while loop) in a global termios (pid and termios)
+
+
+	while(1) {
+		parserMain();	
+		execute();	
+	}
+	// 	// store settings for shell (outside the while loop) in a global termios (pid and termios)
 // 	// in a global termios
 // 	struct termios shell_attr;
 // 	tcgetattr(0, &shell_attr);
@@ -119,11 +146,5 @@ int main() {
 // 	printf("failed to register sigaction handler");
 // 	exit(EXIT_FAILURE);
 // 	}
-
-
-	while(1) {
-		parserMain();	
-		execute();	
-	}
 	return 1;
 }

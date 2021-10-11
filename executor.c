@@ -1,5 +1,3 @@
-#include <stdbool.h> 
-#include <signal.h>
 #include "executor.h"
 
 #ifndef NULL
@@ -38,7 +36,9 @@ void runProg(char* args[]) {
 	// child's code
 
 	if ((pid = fork()) == 0) {
+		//default signal handeling for child
 
+		// setpgid(0, 0);
 		char * command = args[0];
 		//command = strtok(args[0], "\0");
 
@@ -73,6 +73,7 @@ void runProg(char* args[]) {
 		}
 	}
 }
+
 
 bool builtIn(char* input, int args){
 	printf("%s\n", input);
@@ -126,6 +127,8 @@ void execute() {
 			int numArgs = i - startPos;
 			if (numArgs > 0) {
 				if (!builtIn(argArray[startPos], numArgs)){
+
+
 					char *args[numArgs + 1];
 					for (int j = 0; j <= numArgs; j++) {
 						args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
