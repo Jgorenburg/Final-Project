@@ -1,4 +1,5 @@
 #include <stdbool.h> 
+#include <signal.h>
 #include "executor.h"
 
 #ifndef NULL
@@ -108,7 +109,20 @@ void execute() {
 
 			}
 		} else if(strcmp(argArray[startPos], "bg")){
-
+			if(joblist->i == 0){
+				printf("no jobs in the background");
+			}else{
+				struct Node* temp = joblist->head;
+				while(temp->data->status != suspended && temp != NULL){
+					printf("%s", temp->data->status );
+					temp = temp->next;
+				}
+				if(temp->data->status == suspended){
+					kill(temp->data->pid, SIGCONT);
+				}
+			}
+		} else if(strcmp(argArray[startPos], "fg")){
+			printf("%s", argArray[1]);
 		}
 	
 	}

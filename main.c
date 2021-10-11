@@ -51,6 +51,8 @@ static void signal_action_handler(int sig, siginfo_t *si, void *unused){
 				sigaddset(&new_set, SIGCHLD);
 				sigprocmask(SIG_BLOCK, &new_set, &old_set);
 				temp.data->status = suspended;
+				// kill(temp.data->pid, SIGCONT);
+				insertAtHead(joblist, &temp);
 				printf("process %d suspended successfully.", temp.data->pid);
 				sigprocmask(SIG_UNBLOCK, &old_set, NULL);
 				break;
