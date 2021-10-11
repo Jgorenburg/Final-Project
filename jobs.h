@@ -24,6 +24,7 @@ struct job* initJob(pid_t ID,  char* input, struct termios *ioSettings);
 
 // returns element for the given job
 int getID(const struct job j);
+void free_job(struct job* item);
 int getGrpID(const struct job j);
 enum State getState(const struct job j);
 char* getInput(const struct job j);
