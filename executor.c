@@ -140,9 +140,7 @@ void execute() {
 				}
 				startPos = i + 1;
 			}
-			else {
-				i++;
-			}			
+			i++;	
 		}
 		int numArgs = i - startPos;
 		if (numArgs > 0) {

@@ -2,11 +2,8 @@
 #include "jobs.h"
 
 // global variables
-struct LinkedList* joblist;
+struct LinkedList* joblist = (struct LinkedList*)malloc(2 * sizeof(struct Node) + sizeof(int));
 
-
-
-// TODO use defines in parser
 
 int MAX_LINE_SIZE = MS;
 int MAX_NUM_LINES = ML;
