@@ -1,10 +1,13 @@
 #include <stdbool.h> 
 #include "executor.h"
 
+#ifndef NULL
+#define NULL (void *) 0
+#endif
+
 // returns -1 if c is not a special char
 // and the index of c in specialChar if it is
 int isSpecChar(char c) {
-	
 	//char *specialChars = "&%;|><";
 	for (int i = 0; i < strlen(specialChars); i++) {
 		if (c == specialChars[i]) {
@@ -24,20 +27,19 @@ void specChar(char c) {
 }
 
 
-void runProg(char *args[], char *args2[]) {
+void runProg(char* args[]) {
 	pid_t pid;
 
-	// child's code
-	if ((pid = fork()) == 0) {
-		//setting default signal handling for the child process	
-		// signal(SIGINT, SIG_DFL);
-        // signal(SIGQUIT, SIG_DFL);
-        // signal(SIGTTIN, SIG_DFL);
-        // signal(SIGTTOU, SIG_DFL);
-        // signal(SIGCHLD, SIG_DFL);
+	printf("before fork\n");
 
-		char * command = strtok(args[0], "\0");
-		int err = execvp(command, args2);		
+	// child's code
+
+	if ((pid = fork()) == 0) {
+
+		char * command = args[0];
+		//command = strtok(args[0], "\0");
+
+		int err = execvp(command, args);		
 		if (err == -1) {
 			printf("error: did not recognize the command");
 		}
@@ -66,7 +68,6 @@ void runProg(char *args[], char *args2[]) {
 		if (commandLoc == FG) {
 			pause();
 		}
-		// TODO: what is the purpose of this else block?
 		else {
 			printf("error: fork did not run properly");
 		}
@@ -94,6 +95,7 @@ bool builtIn(char* input){
 	}
 }
 void execute() {
+
 	commandLoc = FG;
 
 	int i = 0;
@@ -116,16 +118,16 @@ void execute() {
 			if ((pos = isSpecChar(argArray[i][0])) >= 0) {
 				// implement special chars
 				specChar(argArray[i][0]);
-
 				int numArgs = i - startPos;
 				if (numArgs > 0) {
-					char *args[numArgs];
+					char args[numArgs + 1][MAX_CHARS_PER_LINE];
 					for (int j = 0; j < numArgs; j++) {
-						args[j] = argArray[startPos + j];
+						strcpy(args[j], argArray[startPos + j]);
 					}
-					runProg(args, args);	
+					char *empty = "";
+					strcpy(args[numArgs], empty);
+				//	runProg(args);	
 					startPos = i + 1;
-
 				}
 				startPos = i + 1;
 			}
@@ -135,17 +137,25 @@ void execute() {
 		}
 		int numArgs = i - startPos;
 		if (numArgs > 0) {
-			char *args[numArgs];
-			for (int j = 0; j < numArgs; j++) {
-				args[j] = argArray[startPos + j];
+			//	char args[numArgs + 1][MAX_CHARS_PER_LINE];
+			char *args[numArgs + 1];
+			for (int j = 0; j <= numArgs; j++) {
+				args[j] = (char*)malloc(MAX_CHARS_PER_LINE * sizeof(char));
 			}
-			runProg(args, args);	
-		}	
-	}
+			
+			for (int j = 0; j < numArgs; j++) {
+				strcpy(args[j], argArray[startPos + j]);
+			}
+			//char *empty = "";
+			//strcpy(args[numArgs], empty);
+			args[numArgs] = NULL;
+			runProg(args);
+
+			/*for (int j = 0; j <= numArgs; j++) {
+				free(args[j]);
+			}*/
+			free(args);
+		}
+	}	
 }
-
-
-
-
-
 

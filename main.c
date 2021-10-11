@@ -15,6 +15,7 @@
 int shell_id;
 struct termios* shell_terminal_settings;
 
+
 //destructor jobs
 void destructoreJob(struct Node* temp){
 	struct Node localNode = *temp;

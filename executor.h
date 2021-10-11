@@ -7,6 +7,8 @@
 #include <string.h>
 #include "shared.h"
 
+#define MAX_CHARS_PER_LINE 100
+
 /*extern struct LinkedList jobList;
 extern char argArray[10][100];
 extern int argc;
@@ -20,7 +22,7 @@ enum procLoc{BG, FG} commandLoc;
 
 void specChar(char c);
 int isSpecChar(char c);
-void runProg(char *args[], char *args2[]);
+void runProg(char *args[]);
 void execute();
 
 #endif
