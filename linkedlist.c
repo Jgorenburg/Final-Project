@@ -14,7 +14,8 @@ struct LinkedList* init_list() {
 void free_nodes(struct Node* item) {
     if (item==NULL) {return;}
     free_nodes(item->next);
-    free(item->data);
+    // free(item->data);	// this is a job struct
+	free_job(item->data);
 	free(item);
 }
 
