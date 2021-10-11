@@ -55,11 +55,11 @@ void runProg(char* args[]) {
 
 		// TODO: figure out giving input to job
 		struct termios job_termios;
-		
+
 		if(tcgetattr(STDIN_FILENO, &job_termios) < 0) {
-        		printf("error: assigning termios failed");
+			printf("error: assigning termios failed");
 			return;
-        	}
+		}
 
 		struct job* newJob = initJob(pid, "placeholder", &job_termios);
 		joblist->i++;
@@ -85,13 +85,13 @@ bool builtIn(char* input){
 	} else if(strcmp(input, "fg")==0){
 		return true;
 	}
-	 else if(strcmp(input, "bg")==0){
+	else if(strcmp(input, "bg")==0){
 		return true;
 	}
-	 else if(strcmp(input, "jobs")==0){
+	else if(strcmp(input, "jobs")==0){
 		return true;
 	}
-	 else if(strcmp(input, "exit")==0){
+	else if(strcmp(input, "exit")==0){
 		return true;
 	}
 	else{
@@ -117,7 +117,7 @@ void execute() {
 			}else{
 				struct Node* temp = joblist->head;
 				while(temp->data->status != suspended && temp != NULL){
-					printf("%s", temp->data->status );
+					printf("%d", temp->data->status );
 					temp = temp->next;
 				}
 				if(temp->data->status == suspended){
@@ -126,8 +126,10 @@ void execute() {
 			}
 		} else if(strcmp(argArray[startPos], "fg")==0){
 			printf("%s", argArray[1]);
+		} else if(strcmp(argArray[startPos], "exit")){
+			exit(0);
 		}
-	
+
 	}
 	else {
 		while (i < argc) {
@@ -156,9 +158,7 @@ void execute() {
 				}
 				startPos = i + 1;
 			}
-			else {
-				i++;
-			}			
+			i++;	
 		}
 		int numArgs = i - startPos;
 		if (numArgs > 0) {

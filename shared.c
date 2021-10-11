@@ -5,9 +5,6 @@
 struct LinkedList* joblist;
 
 
-
-// TODO use defines in parser
-
 int MAX_LINE_SIZE = MS;
 int MAX_NUM_LINES = ML;
 char argArray[ML][MS];
