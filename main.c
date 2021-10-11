@@ -84,7 +84,7 @@ int main() {
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
-	// signal(SIGTSTP, SIG_IGN);
+	signal(SIGTSTP, SIG_IGN);
 
 	//putiing shell in its out group 
 	if(setpgid(shell_id, shell_id) < 0){
@@ -98,12 +98,18 @@ int main() {
 
 	struct sigaction sigact;
 	sigact.sa_flags = SA_SIGINFO;
+	sigfillset(&sigact.sa_mask);
 	sigact.sa_sigaction = signal_action_handler;
 	sigaction(SIGCHLD, &sigact, NULL);
 
-	joblist = (struct LinkedList*)malloc(sizeof(*joblist));
-	
-// 	// store settings for shell (outside the while loop) in a global termios (pid and termios)
+	//joblist = (struct LinkedList*)malloc(sizeof(*joblist));
+
+
+	while(1) {
+		parserMain();	
+		execute();	
+	}
+	// 	// store settings for shell (outside the while loop) in a global termios (pid and termios)
 // 	// in a global termios
 // 	struct termios shell_attr;
 // 	tcgetattr(0, &shell_attr);
@@ -120,11 +126,5 @@ int main() {
 // 	printf("failed to register sigaction handler");
 // 	exit(EXIT_FAILURE);
 // 	}
-
-
-	while(1) {
-		parserMain();	
-		execute();	
-	}
 	return 1;
 }

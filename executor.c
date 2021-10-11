@@ -126,7 +126,7 @@ void execute() {
 			}
 		} else if(strcmp(argArray[startPos], "fg")==0){
 			printf("%s", argArray[1]);
-		} else if(strcmp(argArray[startPos], "exit")){
+		} else if(strcmp(argArray[startPos], "exit") == 0){
 			exit(0);
 		}
 
