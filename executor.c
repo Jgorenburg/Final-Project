@@ -1,3 +1,4 @@
+#include <stdbool.h> 
 #include "executor.h"
 
 // returns -1 if c is not a special char
@@ -55,6 +56,7 @@ void runProg(char *args[], char *args2[]) {
         	}
 
 		struct job* newJob = initJob(pid, "placeholder", &job_termios);
+		joblist->i++;
 		setState(newJob, commandLoc);
 		struct Node* jobNode = createNewNode(newJob);
 		insertAtHead(joblist, jobNode);
@@ -71,15 +73,42 @@ void runProg(char *args[], char *args2[]) {
 	}
 }
 
+bool builtIn(char* input){
+	printf("inside builtIn");
+	if(strcmp(input, "kill")){
+		return true;
+	} else if(strcmp(input, "fg")){
+		return true;
+	}
+	 else if(strcmp(input, "bg")){
+		return true;
+	}
+	 else if(strcmp(input, "jobs")){
+		return true;
+	}
+	 else if(strcmp(input, "exit")){
+		return true;
+	}
+	else{
+		return false;
+	}
+}
 void execute() {
 	commandLoc = FG;
 
 	int i = 0;
 	int startPos = i;
-//	if (builtIn(argArray[startPos])) {
+	if (builtIn(argArray[startPos])) {
+		if(strcmp(argArray[startPos], "kill")){
+			if(argc == 1){
+				printf("can't kill as no job pid given");
+			} else if(1 == 0 ){
 
-		// implement built in functions
-	if (0){
+			}
+		} else if(strcmp(argArray[startPos], "bg")){
+
+		}
+	
 	}
 	else {
 		while (i < argc) {
