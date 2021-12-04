@@ -43,7 +43,6 @@ void runProg(char* args[]) {
 		// setpgid(0, 0);
 		char * command = args[0];
 		//command = strtok(args[0], "\0");
-
 		int err = execvp(command, args);		
 		if (err == -1) {
 			printf("error: did not recognize the command");

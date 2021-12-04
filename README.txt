@@ -1,6 +1,6 @@
 NAME:
 =====
-	Li Fan, xx, xxx, (fill in your full names!) 
+	Li Fan, Jacob Gorenburg, Gulesh Shukla 
 
 File directory:
 ===================================
@@ -33,7 +33,6 @@ How to Run:
 	
 
 Basic Structures:
-(!!!pls edit if you think anything needs change!!!)
 =================
     In general, every time user input command line arguments, we have a parser that preprocess user input 
     and generates a global 2d array that can be refernced by other functions. Nect we use the executor to 
@@ -49,15 +48,18 @@ Basic Structures:
 
 
 Features, Known Bugs and Limitations:
-!!!this part needs final update and double check!!!
 =====================================
 Fully implemented:  
     Backgrounding with &;
     Process suspension with Control-Z;
     Process groups;
     Ability to parse special symbols;
-    Special symbols - ';' ;
-    
+    Special symbols - '%', ';' ;
+    Built-in functions - jobs, kill, bg, exit;    
+    Signal Handling;
+
+Fully implemented with small bugs:
+	fg - need to waitpid twice for suspended processes 
 
 Partially implemented:
     Attemped to implement pipe but did not succeed, but the main idea is correct, we think. See pipe_cmd().
@@ -65,10 +67,13 @@ Partially implemented:
 Not implemented:
     Extra credits other than pipe.
 
+Known Bugs:
+    A portion of memory equal to MAX_LINE_SIZE is lost after every user input. It's lost from the malloc's in execute(), but we do not know why since those mallocs are freed;
+    Memory is lost in execvp();
 
 Tests for Robustness and Correctness:
 =====================================
-    !!!!Need final comments on how the testing goes!!!!
+   We did pretty throrough testing using gdb and valgrind. We focused our testing on fg, bg, and kill since everything else is similar to hw2. 
 
 
 Special Instructions to the grader:
