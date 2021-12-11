@@ -9,6 +9,8 @@
 // global variables
 extern struct LinkedList* joblist;
 
+extern FILE* disk;
+
 extern int MAX_LINE_SIZE;
 extern int MAX_NUM_LINES;
 extern char argArray[ML][MS];

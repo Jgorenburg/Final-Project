@@ -4,6 +4,7 @@
 // global variables
 struct LinkedList* joblist;
 
+FILE* disk;
 
 int MAX_LINE_SIZE = MS;
 int MAX_NUM_LINES = ML;

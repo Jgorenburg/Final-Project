@@ -113,6 +113,21 @@ void sig_handler_ctrlz(int signum){
 
 
 int main() {
+	if (access("./DISK", F_OK) != 0) {
+		printf("Cannot find the disk file, please run the format command to create one\n");
+		return -1;
+	}
+
+	disk = fopen("./DISK", "a");
+	
+	char user[20];
+	char password[20];
+	printf("Please log in\nuser: ");
+	fgets(user, 20, stdin);
+	printf("\nHello %spassword: ", user);
+	fgets(password, 20, stdin);
+	// TODO: implement way to compare with valid login	
+
 	joblist=init_list();
 
 	//mallocing space for shell settings termios
