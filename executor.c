@@ -231,6 +231,30 @@ bool builtIn(char* input, int argc, char*argv[]){
 		quitting = true;
 		return true;
 	}
+
+	// new commands for hw 7
+	else if (strcmp(input, "ls") == 0) {
+		bool suffix = false;
+		bool detail = false;
+		if (argc > 1) {
+			for (int i = 1; i < argc; i++) {
+				suffix |= ((strcmp(argv[i], "-F") == 0) || (strcmp(argv[i], "-lF") == 0)
+						|| (strcmp(argv[i], "-Fl") == 0));
+				detail |= ((strcmp(argv[i], "-l") == 0) || (strcmp(argv[i], "-lF") == 0)
+						|| (strcmp(argv[i], "-Fl") == 0));
+			}
+		}
+	} else if (strcmp(input, "chmod") == 0) {
+	} else if (strcmp(input, "mkdir") == 0) {
+	} else if (strcmp(input, "rmdir") == 0) {
+	} else if (strcmp(input, "cd") == 0) {
+	} else if (strcmp(input, "pwd") == 0) {
+	} else if (strcmp(input, "cat") == 0) {
+	} else if (strcmp(input, "more") == 0) {
+	} else if (strcmp(input, "rm") == 0) {
+	} else if (strcmp(input, "mount") == 0) {
+	} else if (strcmp(input, "unmount") == 0) {
+	}
 	else{
 		return false;
 	}	
