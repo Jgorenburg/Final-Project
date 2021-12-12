@@ -267,33 +267,32 @@ struct datablock get_data(int inode, int block_num) {
 		return get_dblock(datablock);
 	}
 
+    // iblock
 	block_num -= N_DBLOCKS;
 	int pointer_num = curr_disk_img->sb.size / INT_SIZE;
-	int count = 0;
-	while (pointer_num >= pointer_num) {
-		block_num -= pointer_num;
-		count++;
-	}
+    if (block_num < N_IBLOCKS * pointer_num) {
+        int count = block_num / pointer_num;
+        if (block_num % pointer_num != 0) {
+            count++;
+        }
+        return get_iblock(curr->iblocks[count], block_num);
+    }
 
-	// iblock
-	if (count < N_IBLOCKS) {
-		return get_iblock(curr->iblocks[count], block_num);
-	}
+    // i2block
+    block_num -= N_IBLOCKS * pointer_num;
+    if (block_num < pointer_num * pointer_num) {
+        return get_i2block(curr->i2block, &block_num);
+    }
 
-	// i2block
-	if (count < pointer_num * pointer_num) {
-		return get_i2block(curr->i2block, &block_num);
-	}
+    // i3block
+    block_num -= pointer_num * pointer_num;
+    if (block_num < pointer_num * pointer_num * pointer_num) {
+        return get_i3block(curr->i3block, &block_num);
+    }
 
-	// i3block
-	block_num -= pointer_num * pointer_num;
-	if (count < pointer_num * pointer_num * pointer_num) {
-		return get_i3block(curr->i3block, &block_num);
-	}
-
-	// file/dir doesn't exist
-	struct datablock null_db;
-	null_db.data = 0;
-	null_db.address = -1;
-	return null_db;
+    // file or dir doesn't exist
+    struct datablock null_db;
+    null_db.data = 0;
+    null_db.address = -1;
+    return null_db;
 }
