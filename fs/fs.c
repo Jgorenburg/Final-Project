@@ -131,9 +131,9 @@ size_t f_read(void *ptr, size_t size, size_t nmemb, int fd) {
 		if (extra > 0) {
 			size_t new_size = block_size - extra;
 			if (total_size < new_size) new_size = total_size;
-			struct data_block tmp_block = get_data(open_files[fd].inode, first);
+			struct datablock tmp_block = get_data(open_files[fd].inode, first);
 			memcpy(ptr + curr_offset, tmp_block.data + extra, new_size);
-			free(*tmp_block.data);
+			free(tmp_block.data);
 			total_size -= new_size;
 			curr_offset += new_size;
 			read += new_size;
@@ -148,7 +148,7 @@ size_t f_read(void *ptr, size_t size, size_t nmemb, int fd) {
 	for (int i = first; i < first + block_num; i++) {
 		if (total_size <= 0) break;
 
-		struct data_block tmp_block = get_data(open_files[fd].inode, i);
+		struct datablock tmp_block = get_data(open_files[fd].inode, i);
 		if (tmp_block.data == 0) break;
 
 		rest = total_size % block_size;
@@ -162,6 +162,26 @@ size_t f_read(void *ptr, size_t size, size_t nmemb, int fd) {
 	}
 	open_files[fd].size += nmemb * size;
 	return read;
+}
+
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, int fd) {
+	// invalid fd
+	if (open_files[fd].inode < 0) return -1;
+	if (fd < 0 || fd >= MAX_OPEN_FILE_NUM) return -1;
+	// user has no access
+	if (curr_disk_img->inodes[open_files[fd].inode].permission & PERMISSION_W) return -1;
+	// file can't be read
+	if (!(open_files[fd].mode & O_WRONLY) && !(open_files[fd].mode & O_RDWR)) return -1;
+
+	size_t write_size = calculate_write_size();
+	open_files[fd].size += write_size;
+
+	struct inode *curr = &((curr_disk_img->inodes)[open_files[fd].inode]);
+	if (open_files[fd].size + write_size > curr->size) {
+		curr->size = open_files[fd].size + write_size;
+		update_inode(open_files[fd].inode);
+	}
+	return write_size;
 }
 
 struct fileent find_file_in_dir(int dir, char *filename) {
@@ -257,7 +277,7 @@ void update_inode(int inode) {
 	write(curr_disk_img->fd, &(curr_disk_img->inodes[inode]), sizeof(struct inode));
 }
 
-/* get data from datablocks */
+/* get data from datablock */
 struct datablock get_data(int inode, int block_num) {
 	struct inode *curr = &(curr_disk_img->inodes[inode]);
 
@@ -295,4 +315,50 @@ struct datablock get_data(int inode, int block_num) {
     null_db.data = 0;
     null_db.address = -1;
     return null_db;
+}
+
+/* datablock is the address of datablock, returns a datablock struct */
+struct datablock get_dblock(int datablock) {
+	struct datablock new;
+	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.data_offset + datablock)*curr_disk_img->sb.size, SEEK_SET);
+
+	void *data = malloc(curr_disk_img->sb.size);
+	read(curr_disk_img->fd, data, curr_disk_img->sb.size);
+	new.data = data;
+	new.address = datablock;
+	free(data);
+	return new;
+}
+
+/* iblock is the address of the indirect blocks */
+struct datablock get_iblock(int iblock, int block_num) {
+	struct datablock i_block = get_dblock(iblock);
+	int datablock = *((int *) (i_block.data + block_num * INT_SIZE));
+	return get_dblock(datablock);
+}
+
+struct datablock get_i2block(int i2block, int *block_num) {
+	int pointer_num = curr_disk_img->sb.size / INT_SIZE;
+
+	int count = 0;
+	while((*block_num) >= pointer_num) {
+		(*block_num) -= pointer_num;
+		count++;
+	}
+	struct datablock i2_block = get_dblock(i2block);
+	int iblock = *((int *) (i2_block.data + count * INT_SIZE));
+	return get_iblock(i2block, *block_num);
+}
+
+struct datablock get_i3block(int i3block, int *block_num) {
+	int pointer_num = curr_disk_img->sb.size / INT_SIZE;
+
+	int count = 0;
+	while((*block_num) >= pointer_num * pointer_num) {
+		(*block_num) -= pointer_num * pointer_num;
+		count++;
+	}
+	struct datablock i3_block = get_dblock(i3block);
+	int i2block = *((int *) (i3_block.data + count * INT_SIZE));
+	return get_i2block(i2block, block_num);
 }
