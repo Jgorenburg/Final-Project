@@ -17,6 +17,8 @@ int root_inode = 0;
 extern int curr_fd;
 extern int uid;
 
+// need to set errno
+
 /* library functions */
 int f_open(const char *filename, const char *mode) {
 	struct fileent file_in_dir;
@@ -109,9 +111,7 @@ int f_open(const char *filename, const char *mode) {
 }
 
 size_t f_read(void *ptr, size_t size, size_t nmemb, int fd) {
-	// invalid fd
-	if (open_files[fd].inode < 0) return -1;
-	if (fd < 0 || fd >= MAX_OPEN_FILE_NUM) return -1;
+	if (check_valid_fd(fd) == -1) return -1;
 	// user has no access
 	if (curr_disk_img->inodes[open_files[fd].inode].permission & PERMISSION_R) return -1;
 	// file can't be read
@@ -165,15 +165,13 @@ size_t f_read(void *ptr, size_t size, size_t nmemb, int fd) {
 }
 
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, int fd) {
-	// invalid fd
-	if (open_files[fd].inode < 0) return -1;
-	if (fd < 0 || fd >= MAX_OPEN_FILE_NUM) return -1;
+	if (check_valid_fd(fd) == -1) return -1;
 	// user has no access
 	if (curr_disk_img->inodes[open_files[fd].inode].permission & PERMISSION_W) return -1;
 	// file can't be read
 	if (!(open_files[fd].mode & O_WRONLY) && !(open_files[fd].mode & O_RDWR)) return -1;
 
-	size_t write_size = calculate_write_size();
+	size_t write_size = size * nmemb;
 	open_files[fd].size += write_size;
 
 	struct inode *curr = &((curr_disk_img->inodes)[open_files[fd].inode]);
@@ -182,6 +180,67 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, int fd) {
 		update_inode(open_files[fd].inode);
 	}
 	return write_size;
+}
+
+int f_close(int fd) {
+	if (check_valid_fd(fd) == -1) return -1;
+
+	open_files[fd].inode = -1;
+	open_files[fd].size = 0;
+	open_files[fd].mode = -1;
+	return 0;
+}
+
+int f_seek(int fd, long int offset, int whence) {
+	if (check_valid_fd(fd) == -1) return -1;
+
+	long new_offset = offset;
+	if (whence == SEEK_CUR) {
+		new_offset = open_files[fd].size + offset;
+	} else if (whence == SEEK_END) {
+		new_offset = ((curr_disk_img->inodes)[open_files[fd].inode]).size + offset;
+	}
+
+	open_files[fd].size = new_offset;
+	return 0;
+}
+
+void f_rewind(int fd) {
+	if (check_valid_fd(fd) != -1) {
+		if(open_files[fd].inode == 0)
+			open_files[fd].size = INIT_SIZE-1;
+		else if(curr_disk_img->inodes[open_files[fd].inode].type == IS_FILE)
+			open_files[fd].size = 0;
+		else if(curr_disk_img->inodes[open_files[fd].inode].type == IS_DIRECTORY)
+			open_files[fd].size = INIT_SIZE;
+	}
+}
+
+int f_stat(int fd, struct stat *buf) {
+	if (check_valid_fd(fd) == -1) return -1;
+
+	buf->st_dev = (dev_t) curr_disk_img->id;
+	buf->st_ino = (ino_t) open_files[fd].inode;
+	buf->st_mode = (mode_t) open_files[fd].mode;
+	buf->st_nlink = (nlink_t) curr_disk_img->inodes[open_files[fd].inode].nlink;
+	buf->st_uid = (uid_t) curr_disk_img->inodes[open_files[fd].inode].uid;
+	buf->st_gid = (gid_t) curr_disk_img->inodes[open_files[fd].inode].gid;
+	// what is st_rdev?
+	buf->st_size = (off_t) curr_disk_img->inodes[open_files[fd].inode].size;
+	buf->st_blksize = (blksize_t) curr_disk_img->sb.size;
+	buf->st_blocks = (blkcnt_t) buf->st_size / buf->st_blksize;
+	// st_atime, st_mtime, st_ctime?
+}
+
+
+
+
+int check_valid_fd(int fd) {
+	// invalid fd
+	if (open_files[fd].inode < 0) return -1;
+	if (fd < 0 || fd >= MAX_OPEN_FILE_NUM) return -1;
+
+	return 0;
 }
 
 struct fileent find_file_in_dir(int dir, char *filename) {

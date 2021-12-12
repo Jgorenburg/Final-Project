@@ -1,6 +1,11 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <stdint.h>
+
 #define NAME_LENGTH 100
 
 #define N_DBLOCKS 10
@@ -48,7 +53,7 @@ struct file {
 
 struct open_file {
     int inode; // the i-node number for the file
-    int size; // number of file entries for directory files, number of bytes for regular files
+    int size; // offset: number of file entries for directory files, number of bytes for regular files
     // char type; // 'f' for file, 'd' for directory, 'm' for more
     int mode; // r, w, a, etc.
 };
