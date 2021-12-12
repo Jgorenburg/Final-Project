@@ -6,7 +6,7 @@
 #define N_DBLOCKS 10
 #define N_IBLOCKS 4
 
-#define POINTER_SIZE sizeof(int)
+#define INT_SIZE sizeof(int)
 #define BOOT_OFFSET 0
 #define SUPER_OFFSET 512
 #define INODE_OFFSET 1024
@@ -76,6 +76,14 @@ struct inode {
     int iblocks[N_IBLOCKS]; /* pointers to indirect blocks */
     int i2block; /* pointer to doubly indirect block */
     int i3block; /* pointer to triply indirect block */
+    int parent; /* inode of parent dir if type is dir, curr dir for regular files */
+    int next_free; /* next free inode */
+    int permission;
+};
+
+struct datablock {
+    void *data;
+    int address;
 };
 
 // directory entry struct
@@ -96,6 +104,7 @@ struct disk_img {
     struct superblock sb;
     struct inode *inodes;
     struct disk_img *next;
+    int fd;
 };
 
 #endif

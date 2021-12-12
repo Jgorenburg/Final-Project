@@ -17,6 +17,7 @@ int root_inode = 0;
 extern int curr_fd;
 extern int uid;
 
+/* library functions */
 int f_open(const char *filename, const char *mode) {
 	struct fileent file_in_dir;
 	int return_file;
@@ -98,7 +99,7 @@ int f_open(const char *filename, const char *mode) {
 	} else {
 		open_files[return_file].size = 0;
 	}
-	int next_fd = increment_fd_count();
+	int next_fd = increase_fd_count();
 	if (next_fd = -1) {
 		free(path);
 		return -1;
@@ -107,17 +108,73 @@ int f_open(const char *filename, const char *mode) {
 	return return_file;
 }
 
+size_t f_read(void *ptr, size_t size, size_t nmemb, int fd) {
+	// invalid fd
+	if (open_files[fd].inode < 0) return -1;
+	if (fd < 0 || fd >= MAX_OPEN_FILE_NUM) return -1;
+	// user has no access
+	if (curr_disk_img->inodes[open_files[fd].inode].permission & PERMISSION_R) return -1;
+	// file can't be read
+	if (!(open_files[fd].mode & O_RDONLY) && !(open_files[fd].mode & O_RDWR)) return -1;
+
+	size_t total_size = size * nmemb;
+	int file_size = open_files[fd].size;
+	int block_size = curr_disk_img->sb.size;
+
+	size_t curr_offset = 0;
+	int read = 0; // read size
+	int first = 0;
+
+	if (file_size > 0) {
+		first = file_size / block_size;
+		size_t extra = file_size % block_size;
+		if (extra > 0) {
+			size_t new_size = block_size - extra;
+			if (total_size < new_size) new_size = total_size;
+			struct data_block tmp_block = get_data(open_files[fd].inode, first);
+			memcpy(ptr + curr_offset, tmp_block.data + extra, new_size);
+			free(*tmp_block.data);
+			total_size -= new_size;
+			curr_offset += new_size;
+			read += new_size;
+			first++;
+		}
+	}
+
+	// the rest of data
+	size_t rest;
+	int block_num = total_size / block_size;
+	if (total_size % block_size > 0) block_num++;
+	for (int i = first; i < first + block_num; i++) {
+		if (total_size <= 0) break;
+
+		struct data_block tmp_block = get_data(open_files[fd].inode, i);
+		if (tmp_block.data == 0) break;
+
+		rest = total_size % block_size;
+		if (rest == 0) rest += block_size;
+
+		memcpy(ptr + curr_offset, tmp_block.data, rest);
+		free(tmp_block.data);
+		total_size -= rest;
+		curr_offset += rest;
+		read += rest;
+	}
+	open_files[fd].size += nmemb * size;
+	return read;
+}
+
 struct fileent find_file_in_dir(int dir, char *filename) {
 	struct fileent file_in_dir;
 	file_in_dir.inode = -1;
 	bzero(file_in_dir.file_name, NAME_LENGTH);
 
+	int old_size = open_files[dir].size;
+	int size = curr_disk_img->inodes[open_files[dir].inode].size;
+
 	if (curr_disk_img->inodes[open_files[dir].inode].type != IS_DIRECTORY) {
 		return file_in_dir;
 	}
-
-	int old_size = open_files[dir].size;
-	int size = curr_disk_img->inodes[open_files[dir].inode].size;
 	if (open_files[dir].size < size) {
 		// there are more sub-directories in this dir
 		file_in_dir = f_readdir(dir);
@@ -146,11 +203,38 @@ int create_file(int dir, char type, char *filename, int permission) {
 	int new_inode;
 	new_inode = curr_disk_img->sb.free_inode;
 
-	
+	// update superblock
+	curr_disk_img->sb.free_inode = curr_disk_img->inodes[curr_disk_img->sb.free_inode].next_free;
+	update_sb();
+
+	// update inode
+	curr_disk_img->inodes[new_inode].type = type;
+	curr_disk_img->inodes[new_inode].protect = 0;
+	curr_disk_img->inodes[new_inode].nlink = 1;
+	curr_disk_img->inodes[new_inode].size = 0;
+	curr_disk_img->inodes[new_inode].uid = uid;
+	curr_disk_img->inodes[new_inode].gid = uid;
+
+	for (int i = 0; i < N_DBLOCKS; i++) {
+		curr_disk_img->inodes[new_inode].dblocks[i] = 0;
+	}
+	for(int i = 0; i < N_IBLOCKS; i++) {
+		curr_disk_img->inodes[new_inode].iblocks[i] = 0;
+	}
+
+	curr_disk_img->inodes[new_inode].i2block = 0;
+	curr_disk_img->inodes[new_inode].i3block = 0;
+
+	curr_disk_img->inodes[new_inode].parent = open_files[dir].inode;
+	curr_disk_img->inodes[new_inode].next_free = 0;
+	curr_disk_img->inodes[new_inode].permission = permission;
+
+	update_inode(open_files[dir].inode);
+	return new_inode;
 }
 
 /* returns -1 if number of open files greater than max open file num; returns 0 otherwise */
-int increment_fd_count() {
+int increase_fd_count() {
 	int old_fd_count = fd_count;
 	fd_count = (fd_count + 1) % MAX_OPEN_FILE_NUM;
 	while (open_files[fd_count].inode >= 0 && fd_count != old_fd_count) {
@@ -159,4 +243,57 @@ int increment_fd_count() {
 	}
 	if (fd_count == old_fd_count) return -1;
 	else return 0;
+}
+
+/* update superblock */
+void update_sb() {
+	lseek(curr_disk_img->fd, SUPER_OFFSET, SEEK_SET);
+	write(curr_disk_img->fd, &(curr_disk_img->sb), sizeof(struct superblock));
+}
+
+/* update a single inode */
+void update_inode(int inode) {
+	lseek(curr_disk_img->fd, INODE_OFFSET + curr_disk_img->sb.inode_offset * curr_disk_img->sb.size + inode * sizeof(struct inode), SEEK_SET);
+	write(curr_disk_img->fd, &(curr_disk_img->inodes[inode]), sizeof(struct inode));
+}
+
+/* get data from datablocks */
+struct datablock get_data(int inode, int block_num) {
+	struct inode *curr = &(curr_disk_img->inodes[inode]);
+
+	// dblock
+	if (block_num < N_DBLOCKS) {
+		int datablock = curr->dblocks[block_num];
+		return get_dblock(datablock);
+	}
+
+	block_num -= N_DBLOCKS;
+	int pointer_num = curr_disk_img->sb.size / INT_SIZE;
+	int count = 0;
+	while (pointer_num >= pointer_num) {
+		block_num -= pointer_num;
+		count++;
+	}
+
+	// iblock
+	if (count < N_IBLOCKS) {
+		return get_iblock(curr->iblocks[count], block_num);
+	}
+
+	// i2block
+	if (count < pointer_num * pointer_num) {
+		return get_i2block(curr->i2block, &block_num);
+	}
+
+	// i3block
+	block_num -= pointer_num * pointer_num;
+	if (count < pointer_num * pointer_num * pointer_num) {
+		return get_i3block(curr->i3block, &block_num);
+	}
+
+	// file/dir doesn't exist
+	struct datablock null_db;
+	null_db.data = 0;
+	null_db.address = -1;
+	return null_db;
 }
