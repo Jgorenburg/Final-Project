@@ -2,10 +2,13 @@ CC = gcc
 
 CFLAGS = -g -Wall
 
-all: shell t
+all: shell format t
 
 t: donothing.c
 	$(CC) $(CFLAGS) -o t donothing.c
+
+format: format.c format.h
+	$(CC) $(CFLAGS) -o format format.c
 
 shell: main.o shared.o parser.o linkedlist.o jobs.o executor.o
 	$(CC) $(CFLAGS) -o shell main.o shared.o parser.o linkedlist.o jobs.o executor.o -lreadline
