@@ -2,10 +2,10 @@
 #define FS_H
 
 #include "structs.h"
-#include <sys/stat.h>
-#include <sys/types.h>
+// #include <sys/stat.h>
 
 /* helper functions */
+int check_valid_fd(int fd);
 struct fileent find_file_in_dir(int dir, char *filename);
 int strend(char *s, char *t);
 int create_file(int dir, char type, char *filename, int permission);

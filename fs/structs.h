@@ -1,6 +1,11 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <stdint.h>
+
 #define NAME_LENGTH 100
 
 #define N_DBLOCKS 10
