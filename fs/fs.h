@@ -6,22 +6,28 @@
 
 /* helper functions */
 int check_valid_fd(int fd);
+void rel_or_abs_path(const char *filename);
 struct fileent find_file_in_dir(int dir, char *filename);
 int strend(char *s, char *t);
 int create_file(int dir, char type, char *filename, int permission);
 int increase_fd_count();
-void update_sb();
+void update_superblock();
 void update_inode(int inode);
 struct datablock get_data(int inode, int block_num);
 struct datablock get_dblock(int datablock);
 struct datablock get_iblock(int iblock, int block_num);
 struct datablock get_i2block(int i2block, int *block_num);
 struct datablock get_i3block(int i3block, int *block_num);
+void create_free_blocks(int block_num);
+void clean_dblock(int datablock, int *total_size);
+void clean_iblock(int iblock, int *total_size);
+void clean_i2block(int i2block, int *total_size);
+void clean_i3block(int i3block, int *total_size);
 
 /* library functions */
 int f_open(const char *filename, const char *mode);
 size_t f_read(void *ptr, size_t size, size_t nmemb, int fd);
-size_t fwrite(const void *ptr, size_t size, size_t nmemb, int fd);
+size_t f_write(const void *ptr, size_t size, size_t nmemb, int fd);
 int f_close(int fd);
 int f_seek(int fd, long int offset, int whence);
 void f_rewind(int fd);
