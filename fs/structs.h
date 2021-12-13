@@ -51,10 +51,10 @@ struct file {
 };
 
 struct open_file {
-    int inode; // the i-node number for the file
-    int size; // offset: number of file entries for directory files, number of bytes for regular files
-    // char type; // 'f' for file, 'd' for directory, 'm' for more
-    int mode; // r, w, a, etc.
+	int inode; // the i-node number for the file
+	int size; // number of file entries for directory files, number of bytes for regular files
+	// char type; // 'f' for file, 'd' for directory, 'm' for more
+	int mode; // r, w, a, etc.
 };
 
 struct superblock {
@@ -67,48 +67,48 @@ struct superblock {
 };
 
 struct inode {
-    int type; /* 1 for directory and 0 for regular files */
-    int protect; /* protection field */
-    int nlink; /* number of links to this file */
-    int size; /* number of bytes in file */
-    int uid; /* owner’s user ID */
-    int gid; /* owner’s group ID */
-    int ctime; /* change time */
-    int mtime; /* modification time */
-    int atime; /* access time */
-    int dblocks[N_DBLOCKS]; /* pointers to data blocks */
-    int iblocks[N_IBLOCKS]; /* pointers to indirect blocks */
-    int i2block; /* pointer to doubly indirect block */
-    int i3block; /* pointer to triply indirect block */
-    int parent; /* inode of parent dir if type is dir, curr dir for regular files */
-    int next_free; /* next free inode */
-    int permission;
+	int type; /* 1 for directory and 0 for regular files */
+	int protect; /* protection field */
+	int nlink; /* number of links to this file */
+	int size; /* number of bytes in file */
+	int uid; /* owner’s user ID */
+	int gid; /* owner’s group ID */
+	int ctime; /* change time */
+	int mtime; /* modification time */
+	int atime; /* access time */
+	int dblocks[N_DBLOCKS]; /* pointers to data blocks */
+	int iblocks[N_IBLOCKS]; /* pointers to indirect blocks */
+	int i2block; /* pointer to doubly indirect block */
+	int i3block; /* pointer to triply indirect block */
+	int parent; /* inode of parent dir if type is dir, curr dir for regular files */
+	int next_free; /* next free inode */
+	int permission;
 };
 
 struct datablock {
-    void *data;
-    int address;
+	void *data;
+	int address;
 };
 
 // directory entry struct
 struct dirent {
-    int inode; // pointer to the list of inodes in the dir
-    char file_name[NAME_LENGTH]; // pointer to the list of file names in the dir
+	int inode; // pointer to the list of inodes in the dir
+	char file_name[NAME_LENGTH]; // pointer to the list of file names in the dir
 };
 
 // file entry struct 
 struct fileent {
-    int inode;
+	int inode;
 	char file_name[NAME_LENGTH];
 };
 
 // disk image file struct
 struct disk_img {
-    int id;
-    struct superblock sb;
-    struct inode *inodes;
-    struct disk_img *next;
-    int fd;
+	int id;
+	struct superblock sb;
+	struct inode *inodes;
+	struct disk_img *next;
+	int fd;
 };
 
 #endif
