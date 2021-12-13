@@ -6,6 +6,7 @@
 
 /* helper functions */
 int check_valid_fd(int fd);
+void rel_or_abs_path(const char *filename);
 struct fileent find_file_in_dir(int dir, char *filename);
 int strend(char *s, char *t);
 int create_file(int dir, char type, char *filename, int permission);

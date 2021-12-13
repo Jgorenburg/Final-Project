@@ -27,21 +27,7 @@ int f_open(const char *filename, const char *mode) {
     char *path = malloc(strlen(filename)+1);
     char *path_parts = strtok(path, DELIM);
 
-	if (*filename == ROOT) {
-		// absolute path
-		open_files[fd_count].inode = root_inode;
-		open_files[fd_count].size = INIT_SIZE - 1;
-		open_files[fd_count].mode = O_RDONLY;
-	} else {
-		// relative path
-		if (open_files[curr_fd].inode == 0) {
-			open_files[fd_count].size = INIT_SIZE - 1;
-		} else {
-			open_files[fd_count].size = INIT_SIZE;
-		}
-		open_files[fd_count].inode = open_files[curr_fd].inode;
-		open_files[fd_count].mode = O_RDONLY;
-	}
+	rel_or_abs_path(filename);
 
 	int new_mode;
     if(strcmp(mode, "r") == 0) {
@@ -66,7 +52,6 @@ int f_open(const char *filename, const char *mode) {
 			// file not found
 			if (strend(filename, path_parts) && (new_mode & O_CREAT)) {
 				// create new file
-				// what if the user creates a folder?
 				file_in_dir.inode = create_file(fd_count, IS_FILE, path_parts, DEFAULT_FILE_PERMISSION);
 				if (file_in_dir.inode < 0) {
 					// fail to create the file
@@ -230,6 +215,75 @@ int f_stat(int fd, struct stat *buf) {
 	buf->st_blksize = (blksize_t) curr_disk_img->sb.size;
 	buf->st_blocks = (blkcnt_t) buf->st_size / buf->st_blksize;
 	// st_atime, st_mtime, st_ctime?
+
+	return 0;
+}
+
+int f_remove(const char *filename) {
+	rel_or_abs_path(filename);
+
+	struct fileent file_in_dir;
+
+    char *path = malloc(strlen(filename)+1);
+    char *path_parts = strtok(path, DELIM);
+
+	while (path_parts) {
+		file_in_dir = find_file_in_dir(fd_count, path_parts);
+
+		if (file_in_dir.inode < 0) {
+			// file not found
+			free(path);
+			return -1;
+		}
+		if(curr_disk_img->inodes[file_in_dir.inode].type == IS_DIRECTORY) {
+			free(path);
+			return -1;
+		}
+		if(uid > 0 && uid != curr_disk_img->inodes[file_in_dir.inode].uid) {
+			free(path);
+			return -1;
+		}
+		if (strend(filename, path_parts)) {
+			int curr_dir_inode = open_files[fd_count].inode;
+
+			// remove file from parent
+			if(curr_disk_img->inodes[open_files[fd_count].inode].type != IS_DIRECTORY) {
+				// parent should be a dir
+				return -1;
+			}
+			if(f_seek(fd_count, curr_disk_img->inodes[open_files[fd_count].inode].size-1, SEEK_SET) < 0) {
+				// find parent
+				return -1;
+			}
+			struct fileent parent_dir = f_readdir(fd_count);
+			f_rewind(fd_count);
+
+			struct fileent child;
+			child.inode = -1;
+			child = f_readdir(fd_count);
+			while (child.inode >=0 && child.inode != file_in_dir.inode) child = f_readdir(fd_count);
+			if (child.inode < 0) {
+				// file not in dir
+				return -1;
+			}
+			open_files[fd_count].size -= 1;
+
+			update_inode(curr_dir_inode);
+			struct inode *parent_inode = &(curr_disk_img->inodes[file_in_dir.inode]);
+			parent_inode->size -= 1;
+
+			// free datablock
+			int entry_size = NAME_LENGTH + INT_SIZE;
+			int entry_num = curr_disk_img->sb.size / entry_size;
+			if (parent_inode->size % entry_num == 0) {
+				struct datablock tmp_block = get_data(curr_dir_inode, parent_inode->size / entry_num);
+				free_datablock();
+			}
+
+			// update file inode
+		}
+		
+	}
 }
 
 
@@ -241,6 +295,24 @@ int check_valid_fd(int fd) {
 	if (fd < 0 || fd >= MAX_OPEN_FILE_NUM) return -1;
 
 	return 0;
+}
+
+void rel_or_abs_path(const char *filename) {
+	if (*filename == ROOT) {
+		// absolute path
+		open_files[fd_count].inode = root_inode;
+		open_files[fd_count].size = INIT_SIZE - 1;
+		open_files[fd_count].mode = O_RDONLY;
+	} else {
+		// relative path
+		if (open_files[curr_fd].inode == 0) {
+			open_files[fd_count].size = INIT_SIZE - 1;
+		} else {
+			open_files[fd_count].size = INIT_SIZE;
+		}
+		open_files[fd_count].inode = open_files[curr_fd].inode;
+		open_files[fd_count].mode = O_RDONLY;
+	}
 }
 
 struct fileent find_file_in_dir(int dir, char *filename) {

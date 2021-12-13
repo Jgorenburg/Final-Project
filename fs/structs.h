@@ -48,7 +48,6 @@ struct file {
 	int size; // size of the entry (including padding)
 	char type; // 'f' for file, 'd' for directory, 'm' for more
 	// char[NAME_LENGTH + 1]; // name of file (with an /0)
-    struct stat;
 };
 
 struct open_file {
@@ -63,8 +62,8 @@ struct superblock {
 	int inode_offset; // the offset of the inode region
 	int data_offset; // the offset of the data region
     int swap_offset;
-	int free_inode; // the pointer to the bitmap of free inodes
-    int free_block; // the pointer to the bitmap of free disk blocks
+	int free_inode; // the pointer to the head of the list of free inodes
+    int free_block; // the pointer to the head of the list of free disk blocks
 };
 
 struct inode {
