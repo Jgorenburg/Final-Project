@@ -93,8 +93,11 @@ struct datablock {
 
 // directory entry struct
 struct dirent {
-	int inode; // pointer to the list of inodes in the dir
-	char file_name[NAME_LENGTH]; // pointer to the list of file names in the dir
+	char *perms; // the permisions for this file	
+	char *user; 
+	int inode;
+	int modTime; // when this file was last modified
+	char *file_name; // pointer to the list of file names in the dir
 };
 
 // file entry struct 
