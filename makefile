@@ -2,10 +2,13 @@ CC = gcc
 
 CFLAGS = -g -Wall
 
-all: shell format t
+all: shell format readdisk t
 
 t: donothing.c
 	$(CC) $(CFLAGS) -o t donothing.c
+
+readdisk: diskReader.c format.h fs/structs.h 
+	$(CC) $(CFLAGS) -o diskread diskReader.c
 
 format: format.c format.h
 	$(CC) $(CFLAGS) -o format format.c
