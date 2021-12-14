@@ -33,7 +33,7 @@ int f_seek(int fd, long int offset, int whence);
 void f_rewind(int fd);
 int f_stat(int fd, struct stat *buf);
 int f_remove(const char *filename);
-int f_opendir(const char *path);
+int f_opendir(const char *dirname);
 struct fileent f_readdir(int fd);
 int f_closedir(int fd);
 int f_mkdir(const char *path, mode_t mode);

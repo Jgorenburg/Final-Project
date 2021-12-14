@@ -8,7 +8,7 @@
 #define DELIM "/"
 #define MAX_OPEN_FILE_NUM 1000
 #define INIT_SIZE 2
-#define  POINTER_NUM curr_disk_img->sb.size / INT_SIZE
+#define POINTER_NUM curr_disk_img->sb.size / INT_SIZE
 
 struct open_file open_files[MAX_OPEN_FILE_NUM]; // list of open files
 struct disk_img *curr_disk_img = 0;
@@ -26,6 +26,7 @@ int f_open(const char *filename, const char *mode) {
 	int return_file;
 
     char *path = malloc(strlen(filename)+1);
+	strcpy(path, filename);
     char *path_parts = strtok(path, DELIM);
 
 	rel_or_abs_path(filename);
@@ -324,6 +325,97 @@ int f_remove(const char *filename) {
 
 		path_parts = strtok(NULL, DELIM);
 	}
+}
+
+int f_opendir(const char *dirname) {
+	int target_dir;
+	char *path = malloc(strlen(dirname) + 1);
+	strcpy(path, dirname);
+	if((*path) == ROOT) {
+		open_files[fd_count].inode = root_inode;
+		open_files[fd_count].size = 0;
+		open_files[fd_count].mode = O_RDONLY;
+	} else {
+		if(open_files[fd_count].inode == 0) {
+			open_files[fd_count].size = 0;
+		}
+		open_files[fd_count].inode = open_files[curr_fd].inode;
+		open_files[fd_count].mode = O_RDONLY;
+	}
+
+	char *path_parts = strtok(path, DELIM);
+	struct fileent file_in_dir;
+
+	while (path_parts) {
+		file_in_dir = find_file_in_dir(fd_count, path_parts);
+
+		if (file_in_dir.inode < 0) {
+			free(path);
+			return -1;
+		}
+		if (strend(dirname, path_parts)) {
+			if (curr_disk_img->inodes[file_in_dir.inode].type != IS_DIRECTORY) {
+				free(path);
+				return -1;
+			}
+		}
+
+		if(file_in_dir.inode == 0) {
+			open_files[fd_count].size = INIT_SIZE-1;
+		}
+		else
+			open_files[fd_count].size = INIT_SIZE;
+		open_files[fd_count].inode = file_in_dir.inode;
+		open_files[fd_count].mode = O_RDONLY;
+		path_parts = strtok(NULL, DELIM);
+	}
+
+	target_dir = fd_count;
+	int result = increment_next_fd();
+	if (result == -1) {
+		free(path);
+		return -1;
+	}
+	free(path);
+	return target_dir;
+}
+
+struct fileent f_readdir(int fd) {
+	if (check_valid_fd < 0) {
+		struct fileent *err = ((struct fileent *) NULL);
+		return *err;
+	}
+	if(!(curr_disk_img->inodes[open_files[fd].inode].permission & PERMISSION_R)) {
+		struct fileent *err = ((struct fileent *) NULL);
+		return *err;
+	}
+
+	struct fileent return_struct;
+	
+	int entry_size = NAME_LENGTH + INT_SIZE;
+	int entry_num = curr_disk_img->sb.size / entry_size;
+	int block_num = open_files[fd].size / entry_num;
+
+	struct datablock dir_data = get_data(open_files[fd].inode, block_num);
+	int rest = open_files[fd].size % entry_num;
+
+	return_struct.inode = *((int *) (dir_data.data + rest * entry_size));
+	memcpy(return_struct.file_name, dir_data.data + entry_size * rest + INT_SIZE, NAME_LENGTH);
+
+	open_files[fd].size += 1;
+	free(dir_data.data);
+	
+	return return_struct;
+}
+
+int f_closedir(int fd) {
+	if (check_valid_fd(fd) < 0) return -1;
+	if (curr_disk_img->inodes[open_files[fd].inode].type != IS_DIRECTORY) return -1;
+
+	open_files[fd].inode = -1;
+	open_files[fd].size = 0;
+	open_files[fd].mode = -1;
+	return 0;
 }
 
 
