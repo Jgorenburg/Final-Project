@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #define NAME_LENGTH 100
 
@@ -98,6 +100,11 @@ struct dirent {
 	int modTime; // when this file was last modified
 	char *file_name; // pointer to the list of file names in the dir
 };
+
+int formatDir (struct dirent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
+	return strlen(output);	
+}
 
 // file entry struct 
 struct fileent {
