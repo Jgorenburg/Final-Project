@@ -1,4 +1,4 @@
-#include "fs/structs.h"
+#include "structs.h"
 #include "format.h"
 #include <stdio.h>
 #include <errno.h>

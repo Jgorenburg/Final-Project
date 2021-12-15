@@ -9,6 +9,7 @@
 #include <stdbool.h> 
 #include <signal.h>
 #include "shared.h"
+#include "fs.h"
 
 #define MAX_CHARS_PER_LINE MAX_LINE_SIZE
 

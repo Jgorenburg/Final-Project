@@ -1,4 +1,6 @@
 #include "executor.h"
+#include <string.h>
+#include <fcntl.h>
 
 #ifndef NULL
 #define NULL (void *) 0
@@ -245,12 +247,29 @@ bool builtIn(char* input, int argc, char*argv[]){
 			}
 		}
 	} else if (strcmp(input, "chmod") == 0) {
+		// if (argc < 3) {
+		// 	printf("usage: chmod <file path> <permission>\n");
+		// } else {
+		// 	char *filename = malloc(strlen(argv[1])+1);
+		// 	filename = argv[1];
+		// 	char *permission = malloc(strlen(argv[2])+1);
+		// 	permission = argv[2];
+		// }
 	} else if (strcmp(input, "mkdir") == 0) {
+		// f_mount("DISK", 0, 0, 0);
+		// char *dir_name = malloc(strlen("/home/zwang1/cs355/Final-Project")+1);
+		// dir_name = "/home/zwang1/cs355/Final-Project";
+
+		// // char *dir_name_copy = strdup(dir_name.c_str());
+		// printf("ENTER\n");
+		// if (f_mkdir(dir_name, DEFAULT_DIR_PERMISSION) < 0) {
+		// 	free(dir_name);
+		// 	return true;
+		// }
+		// // f_open("README.md", O_RDONLY);
+		// // struct fileent new_fileent;
 	} else if (strcmp(input, "rmdir") == 0) {
 	} else if (strcmp(input, "cd") == 0) {
-	} else if (strcmp(input, "pwd") == 0) {
-	} else if (strcmp(input, "cat") == 0) {
-	} else if (strcmp(input, "more") == 0) {
 	} else if (strcmp(input, "rm") == 0) {
 	} else if (strcmp(input, "mount") == 0) {
 	} else if (strcmp(input, "unmount") == 0) {
@@ -258,7 +277,7 @@ bool builtIn(char* input, int argc, char*argv[]){
 	else{
 		return false;
 	}	
-
+	return false;
 }
 void execute() {
 

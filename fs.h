@@ -8,7 +8,7 @@
 int check_valid_fd(int fd);
 void rel_or_abs_path(const char *filename);
 struct fileent find_file_in_dir(int dir, char *filename);
-int strend(char *s, char *t);
+int strend(const char *s, const char *t);
 int create_file(int dir, char type, char *filename, int permission);
 int increase_fd_count();
 void update_superblock();
@@ -32,6 +32,7 @@ void write_dblock(int dblock, void *data);
 void write_iblock(int iblock, int block_num, void *data, int available[4]);
 void write_i2block(int i2block, int *block_num, void *data, int available[4]);
 void write_i3block(int i3block, int *block_num, void *data, int available[4]);
+void update_db(struct datablock *db);
 
 /* library functions */
 int f_open(const char *filename, const char *mode);

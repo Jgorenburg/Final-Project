@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <time.h>
-#include "fs/structs.h"
+#include "structs.h"
 
 #define DEFAULTSIZE 1000000
 #define BLOCKSIZE 512
