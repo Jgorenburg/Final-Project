@@ -142,7 +142,6 @@ int main (int argc, char *argv[]) {
 		empty_inode->protect = 0;
 		empty_inode->next_free = loc + sizeof(struct inode);
 		if (empty_inode->next_free + sizeof(struct inode) >= data_loc) {
-			printf("%d\n", loc);
 			empty_inode->next_free = -1;
 		} 
 		
@@ -161,11 +160,11 @@ int main (int argc, char *argv[]) {
 	// writing the root directory
 	char *root = (char *) malloc (5 * NAME_LENGTH);
 	// start with . and ..
-	int dirLen = formatDir(rootdir, root);
+	int dirLen = dotdotDir(rootdir, root);
 	fseek(fp, 2 * SBSIZE, SEEK_SET);
 	fwrite(root, dirLen, 1, fp);
 	root_inode->size += dirLen;
-	dirLen = formatDir(rootdir, root);
+	dirLen = dotDir(rootdir, root);
 	fwrite(root, dirLen, 1, fp);
 	root_inode->size += dirLen;
 	dirLen = formatDir(admindir, root);	
@@ -178,22 +177,22 @@ int main (int argc, char *argv[]) {
 
 	// writing guest and admin directories	
 	char *admin = (char *) malloc (5 * NAME_LENGTH);
-	dirLen = formatDir(rootdir, admin);
+	dirLen = dotdotDir(rootdir, admin);
 	fseek(fp, admin_inode->dblocks[0], SEEK_SET);
 	fwrite(admin, dirLen, 1, fp);
 	admin_inode->size += dirLen;
-	dirLen = formatDir(admindir, admin);
+	dirLen = dotDir(admindir, admin);
 	fwrite(admin, dirLen, 1, fp);
 	admin_inode->size += dirLen;
 	free(admin);
 
 
 	char *guest = (char *) malloc (5 * NAME_LENGTH);
-	dirLen = formatDir(rootdir, guest);
+	dirLen = dotdotDir(rootdir, guest);
 	fseek(fp, guest_inode->dblocks[0], SEEK_SET);
 	fwrite(guest, dirLen, 1, fp);
 	guest_inode->size += dirLen;
-	dirLen = formatDir(guestdir, guest);
+	dirLen = dotDir(guestdir, guest);
 	fwrite(guest, dirLen, 1, fp);
 	guest_inode->size += dirLen;
 	free(guest);

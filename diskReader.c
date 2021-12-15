@@ -3,6 +3,16 @@
 #include <stdio.h>
 #include <errno.h>
 
+
+// program to read a disk (must use gdb)
+// Steps: 
+// 1. to run - gdb diskread
+// 2. make a breakpoint - b 91
+// 3. start [name of your disk]
+// 4. continue
+// 5. at breakpoint, can read superblock and all disks, along with the portion of
+// 	files in the dblocks
+
 int main(int argc, char *argv[]) {
 	
 	if (argc != 2) {
