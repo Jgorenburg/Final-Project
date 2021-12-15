@@ -88,8 +88,8 @@ int f_open(const char *filename, const char *mode) {
 	} else {
 		open_files[return_file].size = 0;
 	}
-	int next_fd = increase_fd_count();
-	if (next_fd = -1) {
+	int fd_count = increase_fd_count();
+	if (fd_count = -1) {
 		free(path);
 		return -1;
 	}
@@ -371,7 +371,7 @@ int f_opendir(const char *dirname) {
 	}
 
 	target_dir = fd_count;
-	int result = increment_next_fd();
+	int result = increment_fd_count();
 	if (result == -1) {
 		free(path);
 		return -1;
@@ -415,6 +415,122 @@ int f_closedir(int fd) {
 	open_files[fd].inode = -1;
 	open_files[fd].size = 0;
 	open_files[fd].mode = -1;
+	return 0;
+}
+
+int f_mkdir(const char *dirname, mode_t mode) {
+	if (!(mode & PERMISSION_R) | !(mode & PERMISSION_R) | !(mode & PERMISSION_R)) {
+		// set to default permission
+		mode = DEFAULT_DIR_PERMISSION;
+	}
+
+	char *path = (char *) malloc(NAME_LENGTH + 1);
+	bzero(path, NAME_LENGTH + 1);
+	strcpy(path, dirname);
+
+	char *path_parts = strtok(path, DELIM);
+	rel_or_abs_path(dirname);
+
+	struct fileent file_in_dir;
+	while (path_parts) {
+		file_in_dir = find_file_in_dir(fd_count, path_parts);
+
+		if(!(curr_disk_img->inodes[open_files[fd_count].inode].permission & PERMISSION_W)) {
+			return -1;
+		}
+
+		if(strend(dirname, path_parts)) {
+			if (file_in_dir.inode < 0) {
+				// dir doesn't exist
+				if(create_file(fd_count, path_parts, mode, IS_DIRECTORY) < 0) {
+					free(path);
+					return -1;
+				}
+				// path
+				if(open_files[fd_count].inode == 0) {
+					open_files[fd_count].size = INIT_SIZE - 1;
+				} else {
+					open_files[fd_count].size = INIT_SIZE;
+				}
+				file_in_dir = find_file_in_dir(fd_count, path_parts);
+				open_files[fd_count].inode = file_in_dir.inode;
+				open_files[fd_count].size = 0;
+				open_files[fd_count].mode = O_RDONLY;
+
+				char file_name[NAME_LENGTH];
+				bzero(file_name, NAME_LENGTH);
+				int parent_inode = open_files[fd_count].inode;
+				int entry_size = NAME_LENGTH + INT_SIZE;
+
+				file_name[0] = '.';
+				if(write_file(&(file_in_dir.inode), INT_SIZE, 1, fd_count, open_files[fd_count].size * entry_size) != INT_SIZE) {
+					free(path);
+					return -1;
+				}
+				if(write_file(file_name, NAME_LENGTH, 1, fd_count, open_files[fd_count].size*entry_size + INT_SIZE) != NAME_LENGTH) {
+					free(path);
+					return -1;
+				}
+				open_files[fd_count].size += 1;
+				curr_disk_img->inodes[file_in_dir.inode].size += 1;
+
+				file_name[1] = '.';
+				if(write_file(&parent_inode, INT_SIZE, 1, fd_count, open_files[fd_count].size * entry_size) != INT_SIZE) {
+					free(path);
+					return -1;
+				}
+				if(write_file(file_name, NAME_LENGTH, 1, fd_count, open_files[fd_count].size*entry_size + INT_SIZE) != NAME_LENGTH) {
+					free(path);
+					return -1;
+				}
+				update_inode(file_in_dir.inode);
+
+				open_files[fd_count].size += 1;
+				curr_disk_img->inodes[file_in_dir.inode].size += 1;
+
+				free(path);
+				return 0;
+			}
+			free(path);
+			return -1;
+		} else {
+			if (file_in_dir.inode < 0) {
+				free(path);
+				return -1;
+			}
+		}
+
+		if(open_files[fd_count].inode == 0) {
+			open_files[fd_count].size = INIT_SIZE - 1;
+		} else {
+			open_files[fd_count].size = INIT_SIZE;
+		}
+		open_files[fd_count].inode = file_in_dir.inode;
+		open_files[fd_count].mode = O_RDONLY;
+		path_parts = strtok(NULL, DELIM);
+	}
+	free(path);
+	return 0;
+}
+
+int f_rmdir(const char *dirname) {
+	int dir = f_opendir(dirname);
+	if (check_valid_fd(dir) == -1) return -1;
+
+	if(uid != curr_disk_img->inodes[open_files[dir].inode].uid) return -1;
+
+	int result = remove_dir(dir);
+	if (result == -1) return -1;
+
+	if (f_remove(dirname) == -1) return -1;
+
+	curr_disk_img->inodes[open_files[dir].inode].type = IS_FILE;
+	int entry_size = NAME_LENGTH + INT_SIZE;
+	curr_disk_img->inodes[open_files[dir].inode].size *= entry_size;
+	update_inode(open_files[dir].inode);
+
+	if (f_close(dir) == -1) return -1;
+
 	return 0;
 }
 
@@ -648,7 +764,7 @@ void clean_dblock(int datablock, int *total_size) {
 void clean_iblock(int iblock, int *total_size) {
 	struct datablock i_block = get_dblock(iblock);
 
-	for (int i = 0; i <  POINTER_NUM && (*total_size) > 0; i++) {
+	for (int i = 0; i < POINTER_NUM; i++) {
 		int dblock_address = ((int *)i_block.data)[i];
 		clean_dblock(dblock_address, total_size);
 	}
@@ -658,7 +774,7 @@ void clean_iblock(int iblock, int *total_size) {
 void clean_i2block(int i2block, int *total_size) {
 	struct datablock i2_block = get_dblock(i2block);
 
-	for (int i = 0; i <  POINTER_NUM && (*total_size) > 0; i++) {
+	for (int i = 0; i < POINTER_NUM; i++) {
 		int iblock_address = ((int *)i2_block.data)[i];
 		clean_iblock(iblock_address, total_size);
 	}
@@ -668,9 +784,323 @@ void clean_i2block(int i2block, int *total_size) {
 void clean_i3block(int i3block, int *total_size) {
 	struct datablock i3_block = get_dblock(i3block);
 
-	for (int i = 0; i <  POINTER_NUM && (*total_size) > 0; i++) {
+	for (int i = 0; i < POINTER_NUM; i++) {
 		int i2block_address = ((int *)i3_block.data)[i];
 		clean_i2block(i2block_address, total_size);
 	}
 	create_free_blocks(i3block);
+}
+
+int write_file(const void *ptr, size_t size, size_t nmemb, int fd, int file_size) {
+	size_t total_size = size * nmemb;
+
+	struct inode *curr = &(curr_disk_img->inodes[open_files[fd].inode]);
+	if (curr->size < open_files[fd].size) {
+		return -1;
+	}
+
+	int block_size = (curr_disk_img->sb).size;
+
+	size_t curr_offset = 0;
+	struct datablock tmp_block;
+	int first = file_size / block_size;
+
+	if (file_size > 0) {
+		size_t first_rest = file_size % block_size;
+		if (first_rest != 0){
+			size_t extra_size = block_size - first_rest;
+
+			if (total_size < extra_size) extra_size = total_size;
+			tmp_block = get_data(open_files[fd].inode, first);
+			
+			memcpy(tmp_block.data + first_rest, ptr + curr_offset, extra_size);
+			write_data(open_files[fd].inode, first, tmp_block.data);
+			curr_offset += extra_size;
+			total_size -= extra_size;
+			first++;
+		}
+	}
+
+	int num_block = total_size / block_size;
+	if (total_size % block_size != 0){
+		num_block += 1;
+	}
+
+	size_t rest = total_size % block_size;
+	for (int i = first; i < first + num_block; i++) {
+		// read data
+		if (total_size <= 0) break;
+		tmp_block = get_data(open_files[fd].inode, i);
+
+		rest = total_size % block_size;
+		if (rest == 0){
+			rest += block_size;
+		}
+		memcpy(tmp_block.data, ptr + curr_offset, rest);
+		write_data(open_files[fd].inode, i, tmp_block.data);
+
+		curr_offset += rest;
+		total_size -= rest;
+	}
+	
+	return nmemb * size;
+}
+
+int remove_dir(int dir) {
+	if(curr_disk_img->inodes[open_files[fd_count].inode].type != IS_DIRECTORY) return -1;
+
+	struct fileent file_in_dir;
+	file_in_dir.inode = 0;
+
+	int file_size = curr_disk_img->inodes[open_files[dir].inode].size;
+	if(open_files[dir].size < file_size) {
+		file_in_dir = f_readdir(dir);
+	}
+
+	while(open_files[dir].size < file_size) {
+		if(file_in_dir.inode != open_files[dir].inode && file_in_dir.inode != curr_disk_img->inodes[open_files[dir].inode].parent) {
+			if (curr_disk_img->inodes[file_in_dir.inode].type == IS_DIRECTORY) {
+				if(increment_fd_count() < 0) return -1;
+				
+				if(file_in_dir.inode == 0) {
+					open_files[fd_count].size = INIT_SIZE - 1;
+				} else{
+					open_files[fd_count].size = INIT_SIZE;
+				}
+
+				open_files[fd_count].inode = file_in_dir.inode;
+				open_files[fd_count].mode = O_RDONLY;
+
+				remove_dir(fd_count);
+			} else if (curr_disk_img->inodes[file_in_dir.inode].type == IS_FILE) {
+				int file_in_dir_inode = file_in_dir.inode;
+				remove_file(dir, file_in_dir_inode);
+				open_files[dir].size -= 1;
+			} else {
+				return -1;
+			}
+		}
+		file_in_dir = f_readdir(dir);
+	}
+	
+	return 0;
+}
+
+int write_data(int inode, int block_num, void *data) {
+	struct inode *curr = &(curr_disk_img->inodes[inode]);
+
+	size_t file_size = curr->size;
+	size_t file_block = file_size / curr_disk_img->sb.size;
+	if (file_size % curr_disk_img->sb.size != 0) {
+		file_block += 1;
+	}
+
+	int *available = malloc(4 * sizeof(int)); // each index represents dblock, iblock, i1block, i2block respectively
+	bzero(available, 4 * sizeof(int));
+
+	// check what points to free blocks
+	if(file_block < block_num + 1) {
+		int num = block_num + 1;
+		
+		if (num <= N_DBLOCKS) {
+			// dblock
+			available[0] = 1;
+		} else if (num <= N_DBLOCKS + POINTER_NUM * N_IBLOCKS) {
+			// iblock
+			int full_iblock_num = 0; // full iblocks
+			int datablock_num = num - N_DBLOCKS; // num of data blocks in not full blocks
+			while(datablock_num >= POINTER_NUM) {
+				datablock_num -= POINTER_NUM; 
+				full_iblock_num++;
+			}
+			available[0] = 1;
+			if (file_block <= N_DBLOCKS + full_iblock_num * POINTER_NUM && datablock_num == 1){
+				available[1] = 1;
+			}
+		} else if (num <=  N_DBLOCKS + POINTER_NUM * N_IBLOCKS + POINTER_NUM * POINTER_NUM) {
+			// i2block
+			int datablock_rem = 0; // reamining datablock
+			int full_iblock = num - (N_DBLOCKS + POINTER_NUM * N_IBLOCKS);
+			while(full_iblock >= POINTER_NUM) {
+				full_iblock -= POINTER_NUM;
+				datablock_rem++;
+			}
+
+			available[0] = 1;
+			if (file_block <=  N_DBLOCKS +  N_IBLOCKS * POINTER_NUM + datablock_rem * POINTER_NUM && full_iblock == 1){
+				available[1] = 1;
+				if (file_block <=  N_DBLOCKS +  N_IBLOCKS * POINTER_NUM && datablock_rem == 0){
+					available[2] = 1;
+				}
+			}
+		} else if (num <=  N_DBLOCKS + POINTER_NUM * N_IBLOCKS + POINTER_NUM * POINTER_NUM + POINTER_NUM * POINTER_NUM * POINTER_NUM) {
+			// i3block
+			int total_datablock_before_i3 = N_DBLOCKS + POINTER_NUM * N_IBLOCKS + POINTER_NUM * POINTER_NUM;
+			int not_full_i1_i2_block = num - total_datablock_before_i3;
+			int full_i2_block_num = 0;
+			while(not_full_i1_i2_block >= POINTER_NUM * POINTER_NUM) {
+				not_full_i1_i2_block -= POINTER_NUM * POINTER_NUM;
+				full_i2_block_num++;
+			}
+
+			int not_full_i1_block = not_full_i1_i2_block;
+			not_full_i1_i2_block = 0;
+			while (not_full_i1_block >= POINTER_NUM) {
+				not_full_i1_block -= POINTER_NUM;
+				not_full_i1_i2_block++;
+			}
+			
+			available[0] = 1;
+			if (file_block <= total_datablock_before_i3 + full_i2_block_num * POINTER_NUM * POINTER_NUM + not_full_i1_i2_block * POINTER_NUM && not_full_i1_block == 1) {
+				available[1] = 1;
+				if (file_block <= total_datablock_before_i3 + full_i2_block_num * POINTER_NUM * POINTER_NUM && not_full_i1_i2_block == 0) {
+					available[2] = 1;
+					if (file_block <= total_datablock_before_i3 && full_i2_block_num == 0){
+						available[3] = 1;
+					}
+				}
+			}
+		}
+	}
+
+	// dblock
+	if(block_num < N_DBLOCKS) {
+		if (available[0]){
+			curr->dblocks[block_num] = find_free();
+			update_inode(inode);
+		}
+		write_dblock(curr->dblocks[block_num], data);
+		free(available);
+		return 0;
+	}
+
+	block_num -= N_DBLOCKS;
+
+	// iblock
+	int i = 0;
+	while(block_num >= POINTER_NUM && i < N_IBLOCKS) {
+		block_num -= POINTER_NUM;
+		i++;
+	}
+	
+	if(i < N_IBLOCKS) {
+		if (available[1]){
+			curr->iblocks[i] = find_free();
+			update_inode(inode);
+		}
+		write_iblock(curr->iblocks[i], block_num, data, available);
+		free(available);
+		return 0;
+	}
+
+	// i2block
+	if(block_num < POINTER_NUM * POINTER_NUM) {
+		if (available[2]){
+			curr->i2block = find_free();
+			update_inode(inode);
+		}
+		write_i2block(curr->i2block, &block_num, data, available);
+		free(available);
+		return 0;
+	}
+
+	block_num -= POINTER_NUM * POINTER_NUM;
+
+	// i3block
+	if(block_num < POINTER_NUM * POINTER_NUM * POINTER_NUM) {
+		if (available[3]){
+			curr->i3block = find_free();
+			update_inode(inode);
+		}
+		write_i3block(curr->i3block, &block_num, data, available);
+		free(available);
+		return 0;
+	}
+
+	free(available);
+	return -1;
+}
+
+int find_free() {
+	// read free block
+	int free_head = curr_disk_img->sb.free_block;
+	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.free_block + free_head) * (curr_disk_img->sb).size, SEEK_SET);
+
+	int *tmp_free_block = (int*) malloc(curr_disk_img->sb.size);
+	bzero(tmp_free_block, curr_disk_img->sb.size);
+	f_read(tmp_free_block, curr_disk_img->sb.size, 1, curr_disk_img->fd);
+
+	int block_num = tmp_free_block[tmp_free_block[0]];
+
+	tmp_free_block[0] -= 1;
+	if(tmp_free_block[0] == 0) {
+		(curr_disk_img->sb).free_block = free_head + 1;
+	}
+
+	update_superblock();
+
+	// write free block
+	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.free_block + free_head) * (curr_disk_img->sb).size, SEEK_SET);
+	f_write(curr_disk_img->fd, curr_disk_img->sb.size, 1, (char*) tmp_free_block);
+	free(tmp_free_block);
+
+	return block_num;
+}
+
+void write_dblock(int dblock, void *data) {
+	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.data_offset + dblock) * curr_disk_img->sb.size, SEEK_SET);
+	f_write(curr_disk_img->fd, curr_disk_img->sb.size, 1, data);
+}
+
+void write_iblock(int iblock, int block_num, void *data, int available[4]) {
+	struct datablock i_block = get_dblock(iblock);
+
+	int dblock;
+	if (available[0]){
+		dblock = find_free_block();
+		((int *)i_block.data)[block_num] = iblock;
+		update_db(&i_block);
+	}
+	else{
+		dblock = ((int *) i_block.data)[block_num];
+	}
+	write_dblock(iblock, data);
+}
+
+void write_i2block(int i2block, int *block_num, void *data, int available[4]) {
+	struct datablock i_2block = get_dblock(i2block);
+	int iblock;
+	int count = 0;
+	while((*block_num) >= POINTER_NUM) {
+		(*block_num) -= POINTER_NUM;
+		count++;
+	}
+
+	if(available[1]) {
+		iblock = find_free_block();
+		((int *)i_2block.data)[count] = iblock;
+		update_db(&i2block);
+	} else{
+		iblock = ((int *) i_2block.data)[count];
+	}
+	write_iblock(iblock, *block_num, data, available);
+}
+
+void write_i3block(int i3block, int *block_num, void *data, int available[4]) {
+	struct datablock i_3block = get_dblock(i3block);
+	int i2block;
+	int count = 0;
+	while((*block_num) >= POINTER_NUM) {
+		(*block_num) -= POINTER_NUM;
+		count++;
+	}
+
+	if(available[2]) {
+		i2block = find_free_block();
+		((int *)i_3block.data)[count] = i2block;
+		update_db(&i2block);
+	} else{
+		i2block = ((int *) i_3block.data)[count];
+	}
+	write_iblock(i2block, *block_num, data, available);
 }
