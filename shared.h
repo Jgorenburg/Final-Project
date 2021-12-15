@@ -15,6 +15,7 @@ extern int MAX_LINE_SIZE;
 extern int MAX_NUM_LINES;
 extern char argArray[ML][MS];
 extern int argc;
+extern int curDir;
 
 extern char *specialChars;
 
