@@ -1,14 +1,24 @@
 #include "format.h"
 
 int main (int argc, char *argv[]) {
+
+	int fileSize = DEFAULTSIZE;
 	if (argc < 2) {
 		printf("too few arguments\n");
 		return 1;
+	}
+	else if (argc == 4 && strcmp(argv[2], "-s") == 0) {
+		if (sscanf(argv[3], "%d", &fileSize) != 1) {
+			printf("fourth argument is not an integer");
+			return 1;
+		}	
 	}
 	else if (argc > 2) {
 		printf("too many arguments\n");
 		return 1;
 	}
+
+	
 
 	char* fileName = argv[1];
 	FILE *fp;
@@ -21,8 +31,6 @@ int main (int argc, char *argv[]) {
 
 	// makes our file the correct size
 	// code from https://www.linuxquestions.org/questions/programming-9/how-to-create-a-file-of-pre-defined-size-in-c-789667/
-	int fileSize = DEFAULTSIZE;
-
 	fwrite("boot", 5, 1, fp);
 	int result = fseek(fp, fileSize-1, SEEK_SET);
 	if (result == -1) {
@@ -120,9 +128,9 @@ int main (int argc, char *argv[]) {
 	guest_inode->dblocks[0] = OFFSET + (sb->data_offset + 1) * sb->size;
 
 
-	int data_loc = OFFSET + (sb->size * sb->data_offset);
+	int data_loc = sb->free_block;
 	// makes and writes inodes for all empty disk space
-	for (int loc = OFFSET + (3 * sb->size); loc < data_loc; loc += sizeof(struct inode)) {
+	for (int loc = OFFSET + 3 * sizeof(struct inode); loc + sizeof(struct inode) < data_loc; loc += sizeof(struct inode)) {
 		struct inode* empty_inode;
 		// size of the initial inode the full inode space
 		empty_inode = (struct inode*) malloc (sizeof(struct inode));
@@ -133,7 +141,8 @@ int main (int argc, char *argv[]) {
 		empty_inode->atime = time;		
 		empty_inode->protect = 0;
 		empty_inode->next_free = loc + sizeof(struct inode);
-		if (empty_inode->next_free >= data_loc) {
+		if (empty_inode->next_free + sizeof(struct inode) >= data_loc) {
+			printf("%d\n", loc);
 			empty_inode->next_free = -1;
 		} 
 		
@@ -141,6 +150,9 @@ int main (int argc, char *argv[]) {
 		fwrite(empty_inode, sizeof(struct inode), 1, fp);		
 		free(empty_inode);
 	}	
+	sb->free_inode += 3 * sizeof(struct inode);
+	sb->free_block += root_inode->size + admin_inode->size + guest_inode->size;
+
 
 	// writing the superblock					
 	fseek(fp, SBSIZE, SEEK_SET);
