@@ -7,7 +7,7 @@ int pwd_fd;
 int uid = 0;
 
 void test_f_open() {
-	struct fileent *new_dir;
+	struct filent *new_dir;
 	new_dir->file_name[0] = "new.txt";
 
 	int result;

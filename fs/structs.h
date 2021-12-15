@@ -92,19 +92,20 @@ struct datablock {
 	int address;
 };
 
-int formatDir (struct fileent* dir, char* output) {	
-	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
-	return strlen(output);	
-}
-
-// file entry struct 
-struct fileent {
+// file entry struct
+struct filent {
 	char *perms; // the permisions for this file	
 	char *user; 
 	int inode;
 	int modTime; // when this file was last modified
-	char file_name[NAME_LENGTH];
+	char *file_name; // pointer to the list of file names in the dir
 };
+
+
+int formatDir (struct filent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
+	return strlen(output);	
+}
 
 // disk image file struct
 struct disk_img {
