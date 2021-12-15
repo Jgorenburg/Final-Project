@@ -124,9 +124,13 @@ int main() {
 	char password[20];
 	printf("Please log in\nuser: ");
 	fgets(user, 20, stdin);
-	printf("\nHello %spassword: ", user);
-	fgets(password, 20, stdin);
-	// TODO: implement way to compare with valid login	
+
+	if (strcmp(user, "admin") == 0) {
+		curDir = 1;
+	}
+	else {
+		curDir = 2;
+	}
 
 	joblist=init_list();
 

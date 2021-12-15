@@ -10,5 +10,6 @@ int MAX_LINE_SIZE = MS;
 int MAX_NUM_LINES = ML;
 char argArray[ML][MS];
 int argc = 0;
+int curDir = 0;
 
 char *specialChars = "&%;|><";

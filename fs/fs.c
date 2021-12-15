@@ -18,6 +18,9 @@ int root_inode = 0;
 extern int curr_fd;
 extern int uid;
 
+
+
+
 // need to set errno
 
 /* library functions */
