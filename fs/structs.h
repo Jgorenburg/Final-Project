@@ -16,7 +16,7 @@
 #define INT_SIZE sizeof(int)
 #define BOOT_OFFSET 0
 #define SUPER_OFFSET 512
-#define INODE_OFFSET 1024
+#define INODE_OFFSET 1536
 
 #define IS_DIRECTORY 'd'
 #define IS_FILE 'f'
@@ -92,23 +92,17 @@ struct datablock {
 	int address;
 };
 
-// directory entry struct
-struct dirent {
+// int formatDir (struct fileent* dir, char* output) {	
+// 	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
+// 	return strlen(output);	
+// }
+
+// file entry struct 
+struct fileent {
 	char *perms; // the permisions for this file	
 	char *user; 
 	int inode;
 	int modTime; // when this file was last modified
-	char *file_name; // pointer to the list of file names in the dir
-};
-
-int formatDir (struct dirent* dir, char* output) {	
-	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
-	return strlen(output);	
-}
-
-// file entry struct 
-struct fileent {
-	int inode;
 	char file_name[NAME_LENGTH];
 };
 
