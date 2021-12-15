@@ -16,8 +16,8 @@ fs.o: fs.c fs.h structs.h
 format: format.c format.h
 	$(CC) $(CFLAGS) -o format format.c
 
-shell: main.o shared.o parser.o linkedlist.o jobs.o executor.o fs.o
-	$(CC) $(CFLAGS) -o shell main.o shared.o parser.o linkedlist.o jobs.o executor.o fs.o -lreadline
+shell: main.o shared.o parser.o linkedlist.o jobs.o executor.o
+	$(CC) $(CFLAGS) -o shell main.o shared.o parser.o linkedlist.o jobs.o executor.o -lreadline
 
 main.o: main.c main.h parser.o
 	$(CC) $(CFLAGS) -c main.c

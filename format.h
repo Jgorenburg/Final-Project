@@ -1,3 +1,6 @@
+#ifndef FORMAT_H
+#define FORMAT_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -13,3 +16,5 @@
 
 
 int main(int argc, char *argv[]);
+
+#endif
