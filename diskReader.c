@@ -3,6 +3,16 @@
 #include <stdio.h>
 #include <errno.h>
 
+
+// program to read a disk (must use gdb)
+// Steps: 
+// 1. to run - gdb diskread
+// 2. make a breakpoint - b 91
+// 3. start [name of your disk]
+// 4. continue
+// 5. at breakpoint, can read superblock and all disks, along with the portion of
+// 	files in the dblocks
+
 int main(int argc, char *argv[]) {
 	
 	if (argc != 2) {
@@ -34,7 +44,34 @@ int main(int argc, char *argv[]) {
 		
 	}
 */
-	
+	// clean implementation - reads all inodes
+	int numInodes = ((sb->data_offset - sb->inode_offset) * sb->size) / sizeof(struct inode) + 1;
+	struct inode* allInodes[numInodes];
+	char *allData[numInodes];
+	int loc = OFFSET;	
+
+	for (int i = 0; i < numInodes; i++) {
+		struct inode *new_inode = malloc(sizeof(struct inode));
+		fseek(fp, loc, SEEK_SET);
+		fread(new_inode, sizeof(struct inode), 1, fp);
+		allInodes[i] = new_inode;
+
+		// currently only reading data from dblocks
+		if (new_inode->size > 0) {
+			int roundSize = new_inode->size + sb->size - (new_inode->size % sb->size);
+			allData[i] = malloc(roundSize);
+			for (int j = 0; j < roundSize; j += sb->size) {
+				if (j / sb->size < N_DBLOCKS) {
+					fseek(fp, new_inode->dblocks[j / sb->size], SEEK_SET);
+					fread(allData[i] + j, sb->size, 1, fp); 
+				}
+			}
+		}
+
+		loc += sizeof(struct inode);
+	}		
+
+
 	// dirty implementation - reads the current 2 inodes
 	struct inode *iroot = malloc(sizeof(struct inode));
 	fseek(fp, OFFSET, SEEK_SET);
@@ -42,15 +79,11 @@ int main(int argc, char *argv[]) {
 
 	struct inode *iadmin = malloc(sizeof(struct inode));
 	fseek(fp, OFFSET + sizeof(struct inode), SEEK_SET);
-	fread(iroot, sizeof(struct inode), 1, fp);
+	fread(iadmin, sizeof(struct inode), 1, fp);
 	
 	struct inode *iguest = malloc(sizeof(struct inode));
 	fseek(fp, OFFSET + 2 * sizeof(struct inode) , SEEK_SET);
-	fread(iroot, sizeof(struct inode), 1, fp);
-	
-	struct inode *iempty = malloc(sizeof(struct inode));
-	fseek(fp, OFFSET + 3 * sizeof(struct inode), SEEK_SET);
-	fread(iempty, sizeof(struct inode), 1, fp);
+	fread(iguest, sizeof(struct inode), 1, fp);
 
 	char * admin = malloc(sb->size);
 	fseek(fp, iadmin->dblocks[0], SEEK_SET);
@@ -61,10 +94,19 @@ int main(int argc, char *argv[]) {
 	fread(guest, sb->size, 1, fp);
 	
 	
+	for (int i = 0; i < numInodes; i++) {
+		if (allInodes[i]->size > 0) {
+			free(allData[i]);
+		}
+		free(allInodes[i]);
+	} 
 
 	free(sb);
 	free(root);
+	free(admin);
+	free(guest);
 	free(iroot);
-	free(iempty);
+	free(iguest);
+	free(iadmin);
 	return 0;
 }

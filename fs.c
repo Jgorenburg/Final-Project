@@ -23,7 +23,7 @@ extern int uid = 0;
 
 /* library functions */
 int f_open(const char *filename, const char *mode) {
-	struct fileent file_in_dir;
+	struct filent file_in_dir;
 	int return_file;
 
     char *path = malloc(strlen(filename)+1);
@@ -227,7 +227,7 @@ int f_stat(int fd, struct stat *buf) {
 int f_remove(const char *filename) {
 	rel_or_abs_path(filename);
 
-	struct fileent file_in_dir;
+	struct filent file_in_dir;
 
     char *path = malloc(strlen(filename)+1);
     char *path_parts = strtok(path, DELIM);
@@ -260,10 +260,10 @@ int f_remove(const char *filename) {
 				// find parent
 				return -1;
 			}
-			struct fileent parent_dir = f_readdir(fd_count);
+			struct filent parent_dir = f_readdir(fd_count);
 			f_rewind(fd_count);
 
-			struct fileent child;
+			struct filent child;
 			child.inode = -1;
 			child = f_readdir(fd_count);
 			while (child.inode >=0 && child.inode != file_in_dir.inode) child = f_readdir(fd_count);
@@ -356,7 +356,7 @@ int f_opendir(const char *dirname) {
 	}
 
 	char *path_parts = strtok(path, DELIM);
-	struct fileent file_in_dir;
+	struct filent file_in_dir;
 
 	while (path_parts) {
 		file_in_dir = find_file_in_dir(fd_count, path_parts);
@@ -392,17 +392,17 @@ int f_opendir(const char *dirname) {
 	return target_dir;
 }
 
-struct fileent f_readdir(int fd) {
+struct filent f_readdir(int fd) {
 	if (check_valid_fd < 0) {
-		struct fileent *err = ((struct fileent *) NULL);
+		struct filent *err = ((struct filent *) NULL);
 		return *err;
 	}
 	if(!(curr_disk_img->inodes[open_files[fd].inode].permission & PERMISSION_R)) {
-		struct fileent *err = ((struct fileent *) NULL);
+		struct filent *err = ((struct filent *) NULL);
 		return *err;
 	}
 
-	struct fileent return_struct;
+	struct filent return_struct;
 	
 	int entry_size = NAME_LENGTH + INT_SIZE;
 	int entry_num = curr_disk_img->sb.size / entry_size;
@@ -443,7 +443,7 @@ int f_mkdir(const char *dirname, mode_t mode) {
 	char *path_parts = strtok(path, DELIM);
 	rel_or_abs_path(dirname);
 
-	struct fileent file_in_dir;
+	struct filent file_in_dir;
 	while (path_parts) {
 		printf("IN FUNCRION\n");
 		file_in_dir = find_file_in_dir(fd_count, path_parts);
@@ -577,8 +577,8 @@ void rel_or_abs_path(const char *filename) {
 	}
 }
 
-struct fileent find_file_in_dir(int dir, char *filename) {
-	struct fileent file_in_dir;
+struct filent find_file_in_dir(int dir, char *filename) {
+	struct filent file_in_dir;
 	file_in_dir.inode = -1;
 	bzero(file_in_dir.file_name, NAME_LENGTH);
 
@@ -868,7 +868,7 @@ int write_file(const void *ptr, size_t size, size_t nmemb, int fd, int file_size
 int remove_dir(int dir) {
 	if(curr_disk_img->inodes[open_files[fd_count].inode].type != IS_DIRECTORY) return -1;
 
-	struct fileent file_in_dir;
+	struct filent file_in_dir;
 	file_in_dir.inode = 0;
 
 	int file_size = curr_disk_img->inodes[open_files[dir].inode].size;

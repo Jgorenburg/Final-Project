@@ -8,7 +8,7 @@
 #define BLOCKSIZE 512
 #define SBSIZE 512
 #define OFFSET (SBSIZE * 2 + BLOCKSIZE)
-#define IOFFSET 1
+#define IOFFSET 0
 #define ENDLIST -1
 
 

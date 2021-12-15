@@ -63,9 +63,9 @@ struct superblock {
 	int size; // the size of blocks in bytes
 	int inode_offset; // the offset of the inode region
 	int data_offset; // the offset of the data region
-    int swap_offset;
+	int swap_offset;
 	int free_inode; // the pointer to the head of the list of free inodes
-    int free_block; // the pointer to the head of the list of free disk blocks
+	int free_block; // the pointer to the head of the list of free disk blocks
 };
 
 struct inode {
@@ -92,19 +92,32 @@ struct datablock {
 	int address;
 };
 
-// int formatDir (struct fileent* dir, char* output) {	
-// 	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
-// 	return strlen(output);	
-// }
-
-// file entry struct 
-struct fileent {
+// file entry struct
+struct filent {
 	char *perms; // the permisions for this file	
 	char *user; 
 	int inode;
 	int modTime; // when this file was last modified
-	char file_name[NAME_LENGTH];
+	char *file_name; // pointer to the list of file names in the dir
 };
+
+
+// formats directory entry as a string
+int formatDir (struct filent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
+	return strlen(output);	
+}
+
+// like formatDir, but turn name into . and ..
+int dotDir (struct filent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t.\n", dir->perms, dir->user, dir->inode);	
+	return strlen(output);	
+}
+
+int dotdotDir (struct filent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t..\n", dir->perms, dir->user, dir->inode);	
+	return strlen(output);	
+}
 
 // disk image file struct
 struct disk_img {

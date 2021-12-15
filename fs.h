@@ -7,8 +7,8 @@
 /* helper functions */
 int check_valid_fd(int fd);
 void rel_or_abs_path(const char *filename);
-struct fileent find_file_in_dir(int dir, char *filename);
-int strend(const char *s, const char *t);
+struct filent find_file_in_dir(int dir, char *filename);
+int strend(char *s, char *t);
 int create_file(int dir, char type, char *filename, int permission);
 int increase_fd_count();
 void update_superblock();
@@ -44,7 +44,7 @@ void f_rewind(int fd);
 int f_stat(int fd, struct stat *buf);
 int f_remove(const char *filename);
 int f_opendir(const char *dirname);
-struct fileent f_readdir(int fd);
+struct filent f_readdir(int fd);
 int f_closedir(int fd);
 int f_mkdir(const char *dirname, mode_t mode);
 int f_rmdir(const char *dirname);
