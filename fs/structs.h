@@ -63,9 +63,9 @@ struct superblock {
 	int size; // the size of blocks in bytes
 	int inode_offset; // the offset of the inode region
 	int data_offset; // the offset of the data region
-    int swap_offset;
+	int swap_offset;
 	int free_inode; // the pointer to the head of the list of free inodes
-    int free_block; // the pointer to the head of the list of free disk blocks
+	int free_block; // the pointer to the head of the list of free disk blocks
 };
 
 struct inode {
@@ -92,10 +92,10 @@ struct datablock {
 	int address;
 };
 
-// int formatDir (struct fileent* dir, char* output) {	
-// 	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
-// 	return strlen(output);	
-// }
+int formatDir (struct fileent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
+	return strlen(output);	
+}
 
 // file entry struct 
 struct fileent {

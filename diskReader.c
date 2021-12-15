@@ -42,11 +42,11 @@ int main(int argc, char *argv[]) {
 
 	struct inode *iadmin = malloc(sizeof(struct inode));
 	fseek(fp, OFFSET + sizeof(struct inode), SEEK_SET);
-	fread(iroot, sizeof(struct inode), 1, fp);
+	fread(iadmin, sizeof(struct inode), 1, fp);
 	
 	struct inode *iguest = malloc(sizeof(struct inode));
 	fseek(fp, OFFSET + 2 * sizeof(struct inode) , SEEK_SET);
-	fread(iroot, sizeof(struct inode), 1, fp);
+	fread(iguest, sizeof(struct inode), 1, fp);
 	
 	struct inode *iempty = malloc(sizeof(struct inode));
 	fseek(fp, OFFSET + 3 * sizeof(struct inode), SEEK_SET);
