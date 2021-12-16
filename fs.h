@@ -35,7 +35,6 @@ void write_dblock(int dblock, void *data);
 void write_iblock(int iblock, int block_num, void *data, int available[4]);
 void write_i2block(int i2block, int *block_num, void *data, int available[4]);
 void write_i3block(int i3block, int *block_num, void *data, int available[4]);
-void update_db(struct datablock *db);
 
 /* library functions */
 int f_open(const char *filename, const char *mode);
