@@ -6,6 +6,7 @@
 //#include "shared.h"
 #include "linkedlist.h"
 
+void set_dir_img(struct diskimage *di, FILE *dsk);
 int main();
 
 #endif

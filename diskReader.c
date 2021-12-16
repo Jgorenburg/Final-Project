@@ -13,6 +13,10 @@
 // 5. at breakpoint, can read superblock and all disks, along with the portion of
 // 	files in the dblocks
 
+void tester(struct diskimage *di) {
+	di->id = 1;
+}
+
 int main(int argc, char *argv[]) {
 	
 	if (argc != 2) {
@@ -27,6 +31,8 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	
+	struct diskimage* test = malloc(sizeof(struct diskimage));
+	tester(test);	
 
 	// reading the superblock
 	struct superblock *sb = malloc(sizeof(struct superblock));

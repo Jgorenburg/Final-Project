@@ -5,7 +5,11 @@
 #include "shared.h"
 // #include <sys/stat.h>
 
-int write_structs();
+
+extern int curr_fd;
+extern int uid;
+
+void free_diskimage(struct diskimage *di);
 
 /* helper functions */
 int check_valid_fd(int fd);
