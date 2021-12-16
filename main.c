@@ -129,7 +129,21 @@ void set_dir_img(struct diskimage *di, FILE *dsk) {
 		loc += sizeof(struct inode);
 		free(new_inode);
 	}
+	
+	di->root = malloc(tempSB->size);
+	fseek(dsk, SUPER_OFFSET * 2, SEEK_SET);
+	fread(di->root, tempSB->size, 1, dsk);
 
+	int numBlocks = tempSB->swap_offset - tempSB->data_offset;
+	di->blocks = malloc(numBlocks * sizeof(char *));
+	loc = INODE_OFFSET + (tempSB->data_offset - tempSB->inode_offset) * tempSB->size;
+	for (int i = 0; i < numBlocks; i++) {
+		char *new_block = malloc(tempSB->size);
+		fseek(dsk, loc, SEEK_SET);
+		fread(new_block, tempSB->size, 1, dsk);
+		di->blocks[i] = new_block;
+		loc += tempSB->size;	
+	}
 	free(tempSB);
 }
 

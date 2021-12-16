@@ -108,7 +108,6 @@ int formatDir (struct filent* dir, char* output);
 // like formatDir, but turn name into . and ..
 int dotDir (struct filent* dir, char* output);
 
-
 int dotdotDir (struct filent* dir, char* output);
 
 // disk image file struct
@@ -117,6 +116,8 @@ struct diskimage {
 	struct superblock sb;
 	struct inode *inodes;
 	int fd;
+	char *root;
+	char **blocks;
 };
 
 #endif
