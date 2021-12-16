@@ -2,6 +2,7 @@
 #define FS_H
 
 #include "shared.h"
+#include "structs.h"
 // #include <sys/stat.h>
 
 
@@ -11,6 +12,7 @@ extern int uid;
 void free_diskimage(struct diskimage *di);
 
 /* helper functions */
+int findDir(const char *dirname, const struct inode i); 
 int check_valid_fd(int fd);
 void rel_or_abs_path(const char *filename);
 struct filent find_file_in_dir(int dir, char *filename);
@@ -51,6 +53,7 @@ int f_remove(const char *filename);
 int f_opendir(const char *dirname);
 struct filent f_readdir(int fd);
 int f_closedir(int fd);
+int f_moveDir(const char *dirname);
 int f_mkdir(const char *dirname, mode_t mode);
 int f_rmdir(const char *dirname);
 int f_mount(const char *source, const char *target, int mountflags, void *data);
