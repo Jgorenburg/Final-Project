@@ -11,7 +11,7 @@
 extern struct LinkedList* joblist;
 
 extern FILE* disk;
-extern struct disk_img* dimage; 
+extern struct diskimage* dimage; 
 
 extern int MAX_LINE_SIZE;
 extern int MAX_NUM_LINES;

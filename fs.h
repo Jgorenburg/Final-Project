@@ -5,9 +5,10 @@
 // #include <sys/stat.h>
 
 
+extern int curr_fd;
+extern int uid;
 
-void set_dir_img(struct disk_img *di, FILE *dsk);
-void free_disk_img(struct disk_img *di);
+void free_diskimage(struct diskimage *di);
 
 /* helper functions */
 int check_valid_fd(int fd);

@@ -112,11 +112,10 @@ int dotDir (struct filent* dir, char* output);
 int dotdotDir (struct filent* dir, char* output);
 
 // disk image file struct
-struct disk_img {
+struct diskimage {
 	int id;
 	struct superblock sb;
 	struct inode *inodes;
-	struct disk_img *next;
 	int fd;
 };
 

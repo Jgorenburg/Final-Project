@@ -9,39 +9,18 @@
 #define DELIM "/"
 #define MAX_OPEN_FILE_NUM 1000
 #define INIT_SIZE 2
-#define POINTER_NUM curr_disk_img->sb.size / INT_SIZE
+#define POINTER_NUM curr_diskimage->sb.size / INT_SIZE
 
 struct open_file open_files[MAX_OPEN_FILE_NUM]; // list of open files
-struct disk_img *curr_disk_img = 0;
+struct diskimage *curr_diskimage = 0;
 int fd_count = 0;
 int root_inode = 0;
 /* extern var */
-extern int curr_fd = 0;
-extern int uid = 0;
 
-void set_dir_img(struct disk_img *di, FILE *dsk) {
-	di->id = (int)dsk;
-	struct superblock *tempSB = malloc(sizeof(struct superblock));
-	fseek(dsk, SUPER_OFFSET, SEEK_SET);
-	fread(tempSB, sizeof(struct superblock), 1, dsk); 
-	di->sb = *tempSB;
-	
-	int numInodes = ((tempSB->data_offset - tempSB->inode_offset) * tempSB->size) / sizeof(struct inode) + 1;
-	di->inodes = malloc(numInodes * sizeof(struct inode));
-	int loc = INODE_OFFSET; 
-	for (int i = 0; i < numInodes; i++) {			
-		struct inode *new_inode = malloc(sizeof(struct inode));
-		fseek(dsk, loc, SEEK_SET);
-		fread(new_inode, sizeof(struct inode), 1, dsk);
-		di->inodes[i] = *new_inode;
-		loc += sizeof(struct inode);
-		free(new_inode);
-	}
+int curr_fd = 0;
+int uid = 0;
 
-	free(tempSB);
-}
-
-void free_disk_img(struct disk_img *di) {
+void free_diskimage(struct diskimage *di) {
 	free(di->inodes);
 }
 
@@ -108,13 +87,13 @@ int f_open(const char *filename, const char *mode) {
 	open_files[fd_count].size = 0;
 	return_file = fd_count;
 	open_files[return_file].mode = new_mode;
-	if (uid != curr_disk_img->inodes[open_files[return_file].inode].uid) {
+	if (uid != curr_diskimage->inodes[open_files[return_file].inode].uid) {
 		// user has no permission
 		free(path);
 		return -1;
 	}
 	if(open_files[return_file].mode & O_APPEND) {
-		open_files[return_file].size = curr_disk_img->inodes[open_files[return_file].inode].size;
+		open_files[return_file].size = curr_diskimage->inodes[open_files[return_file].inode].size;
 	} else {
 		open_files[return_file].size = 0;
 	}
@@ -130,13 +109,13 @@ int f_open(const char *filename, const char *mode) {
 size_t f_read(void *ptr, size_t size, size_t nmemb, int fd) {
 	if (check_valid_fd(fd) == -1) return -1;
 	// user has no access
-	if (curr_disk_img->inodes[open_files[fd].inode].permission & PERMISSION_R) return -1;
+	if (curr_diskimage->inodes[open_files[fd].inode].permission & PERMISSION_R) return -1;
 	// file can't be read
 	if (!(open_files[fd].mode & O_RDONLY) && !(open_files[fd].mode & O_RDWR)) return -1;
 
 	size_t total_size = size * nmemb;
 	int file_size = open_files[fd].size;
-	int block_size = curr_disk_img->sb.size;
+	int block_size = curr_diskimage->sb.size;
 
 	size_t curr_offset = 0;
 	int read = 0; // read size
@@ -184,14 +163,14 @@ size_t f_read(void *ptr, size_t size, size_t nmemb, int fd) {
 size_t f_write(const void *ptr, size_t size, size_t nmemb, int fd) {
 	if (check_valid_fd(fd) == -1) return -1;
 	// user has no access
-	if (curr_disk_img->inodes[open_files[fd].inode].permission & PERMISSION_W) return -1;
+	if (curr_diskimage->inodes[open_files[fd].inode].permission & PERMISSION_W) return -1;
 	// file can't be read
 	if (!(open_files[fd].mode & O_WRONLY) && !(open_files[fd].mode & O_RDWR)) return -1;
 
 	size_t write_size = size * nmemb;
 	open_files[fd].size += write_size;
 
-	struct inode *curr = &((curr_disk_img->inodes)[open_files[fd].inode]);
+	struct inode *curr = &((curr_diskimage->inodes)[open_files[fd].inode]);
 	if (open_files[fd].size + write_size > curr->size) {
 		curr->size = open_files[fd].size + write_size;
 		update_inode(open_files[fd].inode);
@@ -215,7 +194,7 @@ int f_seek(int fd, long int offset, int whence) {
 	if (whence == SEEK_CUR) {
 		new_offset = open_files[fd].size + offset;
 	} else if (whence == SEEK_END) {
-		new_offset = ((curr_disk_img->inodes)[open_files[fd].inode]).size + offset;
+		new_offset = ((curr_diskimage->inodes)[open_files[fd].inode]).size + offset;
 	}
 
 	open_files[fd].size = new_offset;
@@ -226,9 +205,9 @@ void f_rewind(int fd) {
 	if (check_valid_fd(fd) != -1) {
 		if(open_files[fd].inode == 0)
 			open_files[fd].size = INIT_SIZE-1;
-		else if(curr_disk_img->inodes[open_files[fd].inode].type == IS_FILE)
+		else if(curr_diskimage->inodes[open_files[fd].inode].type == IS_FILE)
 			open_files[fd].size = 0;
-		else if(curr_disk_img->inodes[open_files[fd].inode].type == IS_DIRECTORY)
+		else if(curr_diskimage->inodes[open_files[fd].inode].type == IS_DIRECTORY)
 			open_files[fd].size = INIT_SIZE;
 	}
 }
@@ -236,15 +215,15 @@ void f_rewind(int fd) {
 int f_stat(int fd, struct stat *buf) {
 	if (check_valid_fd(fd) == -1) return -1;
 
-	buf->st_dev = (dev_t) curr_disk_img->id;
+	buf->st_dev = (dev_t) curr_diskimage->id;
 	buf->st_ino = (ino_t) open_files[fd].inode;
 	buf->st_mode = (mode_t) open_files[fd].mode;
-	buf->st_nlink = (nlink_t) curr_disk_img->inodes[open_files[fd].inode].nlink;
-	buf->st_uid = (uid_t) curr_disk_img->inodes[open_files[fd].inode].uid;
-	buf->st_gid = (gid_t) curr_disk_img->inodes[open_files[fd].inode].gid;
+	buf->st_nlink = (nlink_t) curr_diskimage->inodes[open_files[fd].inode].nlink;
+	buf->st_uid = (uid_t) curr_diskimage->inodes[open_files[fd].inode].uid;
+	buf->st_gid = (gid_t) curr_diskimage->inodes[open_files[fd].inode].gid;
 	// what is st_rdev?
-	buf->st_size = (off_t) curr_disk_img->inodes[open_files[fd].inode].size;
-	buf->st_blksize = (blksize_t) curr_disk_img->sb.size;
+	buf->st_size = (off_t) curr_diskimage->inodes[open_files[fd].inode].size;
+	buf->st_blksize = (blksize_t) curr_diskimage->sb.size;
 	buf->st_blocks = (blkcnt_t) buf->st_size / buf->st_blksize;
 	// st_atime, st_mtime, st_ctime?
 
@@ -267,11 +246,11 @@ int f_remove(const char *filename) {
 			free(path);
 			return -1;
 		}
-		if(curr_disk_img->inodes[file_in_dir.inode].type == IS_DIRECTORY) {
+		if(curr_diskimage->inodes[file_in_dir.inode].type == IS_DIRECTORY) {
 			free(path);
 			return -1;
 		}
-		if(uid > 0 && uid != curr_disk_img->inodes[file_in_dir.inode].uid) {
+		if(uid > 0 && uid != curr_diskimage->inodes[file_in_dir.inode].uid) {
 			free(path);
 			return -1;
 		}
@@ -279,11 +258,11 @@ int f_remove(const char *filename) {
 			int curr_dir_inode = open_files[fd_count].inode;
 
 			// remove file from parent
-			if(curr_disk_img->inodes[open_files[fd_count].inode].type != IS_DIRECTORY) {
+			if(curr_diskimage->inodes[open_files[fd_count].inode].type != IS_DIRECTORY) {
 				// parent should be a dir
 				return -1;
 			}
-			if(f_seek(fd_count, curr_disk_img->inodes[open_files[fd_count].inode].size-1, SEEK_SET) < 0) {
+			if(f_seek(fd_count, curr_diskimage->inodes[open_files[fd_count].inode].size-1, SEEK_SET) < 0) {
 				// find parent
 				return -1;
 			}
@@ -309,26 +288,26 @@ int f_remove(const char *filename) {
 			}
 
 			update_inode(curr_dir_inode);
-			struct inode *parent_inode = &(curr_disk_img->inodes[file_in_dir.inode]);
+			struct inode *parent_inode = &(curr_diskimage->inodes[file_in_dir.inode]);
 			parent_inode->size -= 1;
 
 			// update free block
 			
-			int entry_num = curr_disk_img->sb.size / entry_size;
+			int entry_num = curr_diskimage->sb.size / entry_size;
 			if (parent_inode->size % entry_num == 0) {
 				struct datablock tmp_block = get_data(curr_dir_inode, parent_inode->size / entry_num);
 				create_free_blocks(tmp_block.address);
 			}
 
 			// update superblock free_inode pointer
-			curr_disk_img->sb.free_inode = file_in_dir.inode;
+			curr_diskimage->sb.free_inode = file_in_dir.inode;
 			update_superblock();
 
 			// update file inode
-			struct inode *file_inode = &(curr_disk_img->inodes[file_in_dir.inode]);
+			struct inode *file_inode = &(curr_diskimage->inodes[file_in_dir.inode]);
 			file_inode->nlink = 0;
 			file_inode->size = 0;
-			file_inode->next_free = curr_disk_img->sb.free_inode;
+			file_inode->next_free = curr_diskimage->sb.free_inode;
 			update_inode(file_in_dir.inode);
 
 			// clean file inode block
@@ -393,7 +372,7 @@ int f_opendir(const char *dirname) {
 			return -1;
 		}
 		if (strend(dirname, path_parts)) {
-			if (curr_disk_img->inodes[file_in_dir.inode].type != IS_DIRECTORY) {
+			if (curr_diskimage->inodes[file_in_dir.inode].type != IS_DIRECTORY) {
 				free(path);
 				return -1;
 			}
@@ -424,7 +403,7 @@ struct filent f_readdir(int fd) {
 		struct filent *err = ((struct filent *) NULL);
 		return *err;
 	}
-	if(!(curr_disk_img->inodes[open_files[fd].inode].permission & PERMISSION_R)) {
+	if(!(curr_diskimage->inodes[open_files[fd].inode].permission & PERMISSION_R)) {
 		struct filent *err = ((struct filent *) NULL);
 		return *err;
 	}
@@ -432,7 +411,7 @@ struct filent f_readdir(int fd) {
 	struct filent return_struct;
 	
 	int entry_size = NAME_LENGTH + INT_SIZE;
-	int entry_num = curr_disk_img->sb.size / entry_size;
+	int entry_num = curr_diskimage->sb.size / entry_size;
 	int block_num = open_files[fd].size / entry_num;
 
 	struct datablock dir_data = get_data(open_files[fd].inode, block_num);
@@ -449,7 +428,7 @@ struct filent f_readdir(int fd) {
 
 int f_closedir(int fd) {
 	if (check_valid_fd(fd) < 0) return -1;
-	if (curr_disk_img->inodes[open_files[fd].inode].type != IS_DIRECTORY) return -1;
+	if (curr_diskimage->inodes[open_files[fd].inode].type != IS_DIRECTORY) return -1;
 
 	open_files[fd].inode = -1;
 	open_files[fd].size = 0;
@@ -475,7 +454,7 @@ int f_mkdir(const char *dirname, mode_t mode) {
 		printf("IN FUNCRION\n");
 		file_in_dir = find_file_in_dir(fd_count, path_parts);
 
-		if(!(curr_disk_img->inodes[open_files[fd_count].inode].permission & PERMISSION_W)) {
+		if(!(curr_diskimage->inodes[open_files[fd_count].inode].permission & PERMISSION_W)) {
 			return -1;
 		}
 		
@@ -515,7 +494,7 @@ int f_mkdir(const char *dirname, mode_t mode) {
 					return -1;
 				}
 				open_files[fd_count].size += 1;
-				curr_disk_img->inodes[file_in_dir.inode].size += 1;
+				curr_diskimage->inodes[file_in_dir.inode].size += 1;
 
 				file_name[1] = '.';
 				if(write_file(&parent_inode, INT_SIZE, 1, fd_count, open_files[fd_count].size * entry_size) != INT_SIZE) {
@@ -529,7 +508,7 @@ int f_mkdir(const char *dirname, mode_t mode) {
 				update_inode(file_in_dir.inode);
 
 				open_files[fd_count].size += 1;
-				curr_disk_img->inodes[file_in_dir.inode].size += 1;
+				curr_diskimage->inodes[file_in_dir.inode].size += 1;
 
 				free(path);
 				return 0;
@@ -560,16 +539,16 @@ int f_rmdir(const char *dirname) {
 	int dir = f_opendir(dirname);
 	if (check_valid_fd(dir) == -1) return -1;
 
-	if(uid != curr_disk_img->inodes[open_files[dir].inode].uid) return -1;
+	if(uid != curr_diskimage->inodes[open_files[dir].inode].uid) return -1;
 
 	int result = remove_dir(dir);
 	if (result == -1) return -1;
 
 	if (f_remove(dirname) == -1) return -1;
 
-	curr_disk_img->inodes[open_files[dir].inode].type = IS_FILE;
+	curr_diskimage->inodes[open_files[dir].inode].type = IS_FILE;
 	int entry_size = NAME_LENGTH + INT_SIZE;
-	curr_disk_img->inodes[open_files[dir].inode].size *= entry_size;
+	curr_diskimage->inodes[open_files[dir].inode].size *= entry_size;
 	update_inode(open_files[dir].inode);
 
 	if (f_close(dir) == -1) return -1;
@@ -614,10 +593,10 @@ struct filent find_file_in_dir(int dir, char *filename) {
 	int old_size = open_files[dir].size;
 	
 	printf("CURR\n");
-	int size = curr_disk_img->inodes[open_files[dir].inode].size;
+	int size = curr_diskimage->inodes[open_files[dir].inode].size;
 	printf("CURR END\n");
 
-	if (curr_disk_img->inodes[open_files[dir].inode].type != IS_DIRECTORY) {
+	if (curr_diskimage->inodes[open_files[dir].inode].type != IS_DIRECTORY) {
 		return file_in_dir;
 	}
 	if (open_files[dir].size < size) {
@@ -646,33 +625,33 @@ int strend(const char *s, const char *t) {
 /* returns inode of new file */
 int create_file(int dir, char type, char *filename, int permission) {
 	int new_inode;
-	new_inode = curr_disk_img->sb.free_inode;
+	new_inode = curr_diskimage->sb.free_inode;
 
 	// update superblock
-	curr_disk_img->sb.free_inode = curr_disk_img->inodes[curr_disk_img->sb.free_inode].next_free;
+	curr_diskimage->sb.free_inode = curr_diskimage->inodes[curr_diskimage->sb.free_inode].next_free;
 	update_superblock();
 
 	// update inode
-	curr_disk_img->inodes[new_inode].type = type;
-	curr_disk_img->inodes[new_inode].protect = 0;
-	curr_disk_img->inodes[new_inode].nlink = 1;
-	curr_disk_img->inodes[new_inode].size = 0;
-	curr_disk_img->inodes[new_inode].uid = uid;
-	curr_disk_img->inodes[new_inode].gid = uid;
+	curr_diskimage->inodes[new_inode].type = type;
+	curr_diskimage->inodes[new_inode].protect = 0;
+	curr_diskimage->inodes[new_inode].nlink = 1;
+	curr_diskimage->inodes[new_inode].size = 0;
+	curr_diskimage->inodes[new_inode].uid = uid;
+	curr_diskimage->inodes[new_inode].gid = uid;
 
 	for (int i = 0; i < N_DBLOCKS; i++) {
-		curr_disk_img->inodes[new_inode].dblocks[i] = 0;
+		curr_diskimage->inodes[new_inode].dblocks[i] = 0;
 	}
 	for(int i = 0; i < N_IBLOCKS; i++) {
-		curr_disk_img->inodes[new_inode].iblocks[i] = 0;
+		curr_diskimage->inodes[new_inode].iblocks[i] = 0;
 	}
 
-	curr_disk_img->inodes[new_inode].i2block = 0;
-	curr_disk_img->inodes[new_inode].i3block = 0;
+	curr_diskimage->inodes[new_inode].i2block = 0;
+	curr_diskimage->inodes[new_inode].i3block = 0;
 
-	curr_disk_img->inodes[new_inode].parent = open_files[dir].inode;
-	curr_disk_img->inodes[new_inode].next_free = 0;
-	curr_disk_img->inodes[new_inode].permission = permission;
+	curr_diskimage->inodes[new_inode].parent = open_files[dir].inode;
+	curr_diskimage->inodes[new_inode].next_free = 0;
+	curr_diskimage->inodes[new_inode].permission = permission;
 
 	update_inode(open_files[dir].inode);
 	return new_inode;
@@ -692,19 +671,19 @@ int increase_fd_count() {
 
 /* update superblock */
 void update_superblock() {
-	lseek(curr_disk_img->fd, SUPER_OFFSET, SEEK_SET);
-	f_write(&(curr_disk_img->sb), sizeof(struct superblock), 1, curr_disk_img->fd);
+	lseek(curr_diskimage->fd, SUPER_OFFSET, SEEK_SET);
+	f_write(&(curr_diskimage->sb), sizeof(struct superblock), 1, curr_diskimage->fd);
 }
 
 /* update a single inode */
 void update_inode(int inode) {
-	lseek(curr_disk_img->fd, INODE_OFFSET + curr_disk_img->sb.inode_offset * curr_disk_img->sb.size + inode * sizeof(struct inode), SEEK_SET);
-	f_write(&(curr_disk_img->inodes[inode]), sizeof(struct inode), 1, curr_disk_img->fd);
+	lseek(curr_diskimage->fd, INODE_OFFSET + curr_diskimage->sb.inode_offset * curr_diskimage->sb.size + inode * sizeof(struct inode), SEEK_SET);
+	f_write(&(curr_diskimage->inodes[inode]), sizeof(struct inode), 1, curr_diskimage->fd);
 }
 
 /* get data from datablock */
 struct datablock get_data(int inode, int block_num) {
-	struct inode *curr = &(curr_disk_img->inodes[inode]);
+	struct inode *curr = &(curr_diskimage->inodes[inode]);
 
 	// dblock
 	if (block_num < N_DBLOCKS) {
@@ -745,10 +724,10 @@ struct datablock get_data(int inode, int block_num) {
 /* datablock is the address of datablock, returns a datablock struct */
 struct datablock get_dblock(int datablock) {
 	struct datablock new;
-	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.data_offset + datablock)*curr_disk_img->sb.size, SEEK_SET);
+	lseek(curr_diskimage->fd, INODE_OFFSET + (curr_diskimage->sb.data_offset + datablock)*curr_diskimage->sb.size, SEEK_SET);
 
-	void *data = malloc(curr_disk_img->sb.size);
-	f_read(data, curr_disk_img->sb.size, 1, curr_disk_img->fd);
+	void *data = malloc(curr_diskimage->sb.size);
+	f_read(data, curr_diskimage->sb.size, 1, curr_diskimage->fd);
 	new.data = data;
 	new.address = datablock;
 	free(data);
@@ -785,25 +764,25 @@ struct datablock get_i3block(int i3block, int *block_num) {
 }
 
 void create_free_blocks(int block_num) {
-	int *tmp_free_block = (int*) malloc(curr_disk_img->sb.size);
+	int *tmp_free_block = (int*) malloc(curr_diskimage->sb.size);
 	
-	int free_head = curr_disk_img->sb.free_block;
+	int free_head = curr_diskimage->sb.free_block;
 	// read curr free
-	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.free_block + free_head) * (curr_disk_img->sb).size, SEEK_SET);
-	bzero(tmp_free_block, curr_disk_img->sb.size);
-	f_read(tmp_free_block, curr_disk_img->sb.size, 1, curr_disk_img->fd);
+	lseek(curr_diskimage->fd, INODE_OFFSET + (curr_diskimage->sb.free_block + free_head) * (curr_diskimage->sb).size, SEEK_SET);
+	bzero(tmp_free_block, curr_diskimage->sb.size);
+	f_read(tmp_free_block, curr_diskimage->sb.size, 1, curr_diskimage->fd);
 	int index = tmp_free_block[0] + 1;
 	tmp_free_block[index] = block_num;
 	tmp_free_block[0] += 1;
 
 	// write free block back
-	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.free_block + free_head) * (curr_disk_img->sb).size, SEEK_SET);
-	f_write((char*) tmp_free_block, curr_disk_img->sb.size, 1, curr_disk_img->fd);
+	lseek(curr_diskimage->fd, INODE_OFFSET + (curr_diskimage->sb.free_block + free_head) * (curr_diskimage->sb).size, SEEK_SET);
+	f_write((char*) tmp_free_block, curr_diskimage->sb.size, 1, curr_diskimage->fd);
 	free(tmp_free_block);
 }
 
 void clean_dblock(int datablock, int *total_size) {
-	(*total_size) -= curr_disk_img->sb.size;
+	(*total_size) -= curr_diskimage->sb.size;
 	create_free_blocks(datablock);
 }
 
@@ -840,12 +819,12 @@ void clean_i3block(int i3block, int *total_size) {
 int write_file(const void *ptr, size_t size, size_t nmemb, int fd, int file_size) {
 	size_t total_size = size * nmemb;
 
-	struct inode *curr = &(curr_disk_img->inodes[open_files[fd].inode]);
+	struct inode *curr = &(curr_diskimage->inodes[open_files[fd].inode]);
 	if (curr->size < open_files[fd].size) {
 		return -1;
 	}
 
-	int block_size = (curr_disk_img->sb).size;
+	int block_size = (curr_diskimage->sb).size;
 
 	size_t curr_offset = 0;
 	struct datablock tmp_block;
@@ -893,19 +872,19 @@ int write_file(const void *ptr, size_t size, size_t nmemb, int fd, int file_size
 }
 
 int remove_dir(int dir) {
-	if(curr_disk_img->inodes[open_files[fd_count].inode].type != IS_DIRECTORY) return -1;
+	if(curr_diskimage->inodes[open_files[fd_count].inode].type != IS_DIRECTORY) return -1;
 
 	struct filent file_in_dir;
 	file_in_dir.inode = 0;
 
-	int file_size = curr_disk_img->inodes[open_files[dir].inode].size;
+	int file_size = curr_diskimage->inodes[open_files[dir].inode].size;
 	if(open_files[dir].size < file_size) {
 		file_in_dir = f_readdir(dir);
 	}
 
 	while(open_files[dir].size < file_size) {
-		if(file_in_dir.inode != open_files[dir].inode && file_in_dir.inode != curr_disk_img->inodes[open_files[dir].inode].parent) {
-			if (curr_disk_img->inodes[file_in_dir.inode].type == IS_DIRECTORY) {
+		if(file_in_dir.inode != open_files[dir].inode && file_in_dir.inode != curr_diskimage->inodes[open_files[dir].inode].parent) {
+			if (curr_diskimage->inodes[file_in_dir.inode].type == IS_DIRECTORY) {
 				if(increase_fd_count() < 0) return -1;
 				
 				if(file_in_dir.inode == 0) {
@@ -918,11 +897,11 @@ int remove_dir(int dir) {
 				open_files[fd_count].mode = O_RDONLY;
 
 				remove_dir(fd_count);
-			} else if (curr_disk_img->inodes[file_in_dir.inode].type == IS_FILE) {
+			} else if (curr_diskimage->inodes[file_in_dir.inode].type == IS_FILE) {
 				int file_in_dir_inode = file_in_dir.inode;
 				// start removing file
 				int index = open_files[dir].inode;
-				struct inode *dir_inode = &(curr_disk_img->inodes[index]);
+				struct inode *dir_inode = &(curr_diskimage->inodes[index]);
 				// if(find_and_remove_entry(dir, file_in_dir_inode) < 0) {
 				// 	return -1;
 				// }
@@ -930,7 +909,7 @@ int remove_dir(int dir) {
 				update_inode(index);
 
 				int entry_size = NAME_LENGTH + INT_SIZE;
-				int N_FILE_ENTRY = curr_disk_img->sb.size / entry_size;
+				int N_FILE_ENTRY = curr_diskimage->sb.size / entry_size;
 				int last_block_ind = dir_inode->size/N_FILE_ENTRY;
 				int last_block_rmd = dir_inode->size % N_FILE_ENTRY;
 				if(last_block_rmd == 0) {
@@ -940,7 +919,7 @@ int remove_dir(int dir) {
 				}
 
 				// file inode
-				struct inode *file_inode = &(curr_disk_img->inodes[file_in_dir_inode]);
+				struct inode *file_inode = &(curr_diskimage->inodes[file_in_dir_inode]);
 				file_inode->nlink = 0; 
 				int rest = file_inode->size;
 
@@ -964,11 +943,11 @@ int remove_dir(int dir) {
 				}
 				file_inode->size = 0;
 
-				file_inode->next_free = curr_disk_img->sb.free_inode;
+				file_inode->next_free = curr_diskimage->sb.free_inode;
 				update_inode(file_in_dir_inode);
 
 				// sb
-				curr_disk_img->sb.free_inode = file_in_dir_inode;
+				curr_diskimage->sb.free_inode = file_in_dir_inode;
 				update_superblock();
 
 				// end
@@ -984,11 +963,11 @@ int remove_dir(int dir) {
 }
 
 int write_data(int inode, int block_num, void *data) {
-	struct inode *curr = &(curr_disk_img->inodes[inode]);
+	struct inode *curr = &(curr_diskimage->inodes[inode]);
 
 	size_t file_size = curr->size;
-	size_t file_block = file_size / curr_disk_img->sb.size;
-	if (file_size % curr_disk_img->sb.size != 0) {
+	size_t file_block = file_size / curr_diskimage->sb.size;
+	if (file_size % curr_diskimage->sb.size != 0) {
 		file_block += 1;
 	}
 
@@ -1120,33 +1099,33 @@ int write_data(int inode, int block_num, void *data) {
 
 int find_free() {
 	// read free block
-	int free_head = curr_disk_img->sb.free_block;
-	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.free_block + free_head) * (curr_disk_img->sb).size, SEEK_SET);
+	int free_head = curr_diskimage->sb.free_block;
+	lseek(curr_diskimage->fd, INODE_OFFSET + (curr_diskimage->sb.free_block + free_head) * (curr_diskimage->sb).size, SEEK_SET);
 
-	int *tmp_free_block = (int*) malloc(curr_disk_img->sb.size);
-	bzero(tmp_free_block, curr_disk_img->sb.size);
-	f_read(tmp_free_block, curr_disk_img->sb.size, 1, curr_disk_img->fd);
+	int *tmp_free_block = (int*) malloc(curr_diskimage->sb.size);
+	bzero(tmp_free_block, curr_diskimage->sb.size);
+	f_read(tmp_free_block, curr_diskimage->sb.size, 1, curr_diskimage->fd);
 
 	int block_num = tmp_free_block[tmp_free_block[0]];
 
 	tmp_free_block[0] -= 1;
 	if(tmp_free_block[0] == 0) {
-		(curr_disk_img->sb).free_block = free_head + 1;
+		(curr_diskimage->sb).free_block = free_head + 1;
 	}
 
 	update_superblock();
 
 	// write free block
-	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.free_block + free_head) * (curr_disk_img->sb).size, SEEK_SET);
-	f_write((char*) tmp_free_block, curr_disk_img->sb.size, 1, curr_disk_img->fd);
+	lseek(curr_diskimage->fd, INODE_OFFSET + (curr_diskimage->sb.free_block + free_head) * (curr_diskimage->sb).size, SEEK_SET);
+	f_write((char*) tmp_free_block, curr_diskimage->sb.size, 1, curr_diskimage->fd);
 	free(tmp_free_block);
 
 	return block_num;
 }
 
 void write_dblock(int dblock, void *data) {
-	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.data_offset + dblock) * curr_disk_img->sb.size, SEEK_SET);
-	f_write(data, curr_disk_img->sb.size, 1, curr_disk_img->fd);
+	lseek(curr_diskimage->fd, INODE_OFFSET + (curr_diskimage->sb.data_offset + dblock) * curr_diskimage->sb.size, SEEK_SET);
+	f_write(data, curr_diskimage->sb.size, 1, curr_diskimage->fd);
 }
 
 void write_iblock(int iblock, int block_num, void *data, int available[4]) {
@@ -1203,6 +1182,6 @@ void write_i3block(int i3block, int *block_num, void *data, int available[4]) {
 }
 
 void update_db(struct datablock *db) {
-	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.data_offset + db->address) * curr_disk_img->sb.size, SEEK_SET);
-	write(curr_disk_img->fd, db->data, curr_disk_img->sb.size);
+	lseek(curr_diskimage->fd, INODE_OFFSET + (curr_diskimage->sb.data_offset + db->address) * curr_diskimage->sb.size, SEEK_SET);
+	write(curr_diskimage->fd, db->data, curr_diskimage->sb.size);
 }

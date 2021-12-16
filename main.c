@@ -111,14 +111,35 @@ void sig_handler_ctrlz(int signum){
 	}
 }
 
+void set_dir_img(struct diskimage *di, FILE *dsk) {
+	di->id = (int)dsk;
+	struct superblock *tempSB = malloc(sizeof(struct superblock));
+	fseek(dsk, 512, SEEK_SET);
+	fread(tempSB, sizeof(struct superblock), 1, dsk); 
+	di->sb = *tempSB;
+	
+	int numInodes = ((tempSB->data_offset - tempSB->inode_offset) * tempSB->size) / sizeof(struct inode) + 1;
+	di->inodes = malloc(numInodes * sizeof(struct inode));
+	int loc = INODE_OFFSET; 
+	for (int i = 0; i < numInodes; i++) {			
+		struct inode *new_inode = malloc(sizeof(struct inode));
+		fseek(dsk, loc, SEEK_SET);
+		fread(new_inode, sizeof(struct inode), 1, dsk);
+		di->inodes[i] = *new_inode;
+		loc += sizeof(struct inode);
+		free(new_inode);
+	}
+
+	free(tempSB);
+}
 
 int main() {
-	if (access("./DISK", F_OK) != 0) {
+	if (access("DISK", F_OK) != 0) {
 		printf("Cannot find the disk file, please run the format command to create one\n");
 		return -1;
 	}
 
-	disk = fopen("./DISK", "a");
+	disk = fopen("DISK", "r");
 	
 	char user[20];
 	char password[20];
@@ -131,6 +152,9 @@ int main() {
 	else {
 		curDir = 2;
 	}
+	
+	dimage = malloc(sizeof(struct diskimage));
+	set_dir_img(dimage, disk);
 
 	joblist=init_list();
 
