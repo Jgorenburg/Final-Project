@@ -2,7 +2,10 @@
 #define FS_H
 
 #include "structs.h"
+#include "shared.h"
 // #include <sys/stat.h>
+
+int write_structs();
 
 /* helper functions */
 int check_valid_fd(int fd);

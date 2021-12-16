@@ -11,6 +11,13 @@
 #define INIT_SIZE 2
 #define POINTER_NUM curr_disk_img->sb.size / INT_SIZE
 
+#define DEFAULTSIZE 1000000
+#define BLOCKSIZE 512
+#define SBSIZE 512
+#define OFFSET (SBSIZE * 2 + BLOCKSIZE)
+#define IOFFSET 0
+#define ENDLIST -1
+
 struct open_file open_files[MAX_OPEN_FILE_NUM]; // list of open files
 struct disk_img *curr_disk_img = 0;
 int fd_count = 0;
@@ -19,6 +26,103 @@ int root_inode = 0;
 extern int curr_fd = 0;
 extern int uid = 0;
 
+
+int write_structs() {
+	if (argc != 2) {
+		perror("invalid number of args, should be 2\n");
+		return 1;
+	}	
+
+	FILE *fp;
+	fp = fopen("new", "r"); // "new" should be argv[1]
+	if (ferror(fp)) {
+		printf("cannot open %s\n", "new");
+		return 1;
+	}
+	
+
+	// reading the superblock
+	struct superblock *sb = malloc(sizeof(struct superblock));
+	fseek(fp, SBSIZE, SEEK_SET);
+	fread(sb, sizeof(struct superblock), 1, fp);
+
+	// reading the root dir
+	char* root = malloc(sb->size);
+	fseek(fp, 2 * SBSIZE, SEEK_SET);
+	fread(root, sb->size, 1, fp);
+
+	// reads all inodes
+/*	int loc = OFFSET;
+	while (loc < OFFSET + sb->data_offset * BLOCKSIZE) {
+		
+	}
+*/
+	// clean implementation - reads all inodes
+	int numInodes = ((sb->data_offset - sb->inode_offset) * sb->size) / sizeof(struct inode) + 1;
+	struct inode* allInodes[numInodes];
+	char *allData[numInodes];
+	int loc = OFFSET;	
+
+	for (int i = 0; i < numInodes; i++) {
+		struct inode *new_inode = malloc(sizeof(struct inode));
+		fseek(fp, loc, SEEK_SET);
+		fread(new_inode, sizeof(struct inode), 1, fp);
+		allInodes[i] = new_inode;
+
+		// currently only reading data from dblocks
+		if (new_inode->size > 0) {
+			int roundSize = new_inode->size + sb->size - (new_inode->size % sb->size);
+			allData[i] = malloc(roundSize);
+			for (int j = 0; j < roundSize; j += sb->size) {
+				if (j / sb->size < N_DBLOCKS) {
+					fseek(fp, new_inode->dblocks[j / sb->size], SEEK_SET);
+					fread(allData[i] + j, sb->size, 1, fp); 
+				}
+			}
+		}
+
+		loc += sizeof(struct inode);
+	}		
+
+
+	// dirty implementation - reads the current 2 inodes
+	struct inode *iroot = malloc(sizeof(struct inode));
+	fseek(fp, OFFSET, SEEK_SET);
+	fread(iroot, sizeof(struct inode), 1, fp);
+
+	struct inode *iadmin = malloc(sizeof(struct inode));
+	fseek(fp, OFFSET + sizeof(struct inode), SEEK_SET);
+	fread(iadmin, sizeof(struct inode), 1, fp);
+	
+	struct inode *iguest = malloc(sizeof(struct inode));
+	fseek(fp, OFFSET + 2 * sizeof(struct inode) , SEEK_SET);
+	fread(iguest, sizeof(struct inode), 1, fp);
+
+	char * admin = malloc(sb->size);
+	fseek(fp, iadmin->dblocks[0], SEEK_SET);
+	fread(admin, sb->size, 1, fp);
+
+	char * guest = malloc(sb->size);
+	fseek(fp, iguest->dblocks[0], SEEK_SET);
+	fread(guest, sb->size, 1, fp);
+	
+	
+	for (int i = 0; i < numInodes; i++) {
+		if (allInodes[i]->size > 0) {
+			free(allData[i]);
+		}
+		free(allInodes[i]);
+	} 
+
+	free(sb);
+	free(root);
+	free(admin);
+	free(guest);
+	free(iroot);
+	free(iguest);
+	free(iadmin);
+	return 0;
+}
 
 
 
@@ -669,13 +773,15 @@ int increase_fd_count() {
 /* update superblock */
 void update_superblock() {
 	lseek(curr_disk_img->fd, SUPER_OFFSET, SEEK_SET);
-	f_write(&(curr_disk_img->sb), sizeof(struct superblock), 1, curr_disk_img->fd);
+	write(curr_disk_img->fd, &(curr_disk_img->sb), sizeof(struct superblock));
+	// f_write(&(curr_disk_img->sb), sizeof(struct superblock), 1, curr_disk_img->fd);
 }
 
 /* update a single inode */
 void update_inode(int inode) {
 	lseek(curr_disk_img->fd, INODE_OFFSET + curr_disk_img->sb.inode_offset * curr_disk_img->sb.size + inode * sizeof(struct inode), SEEK_SET);
-	f_write(&(curr_disk_img->inodes[inode]), sizeof(struct inode), 1, curr_disk_img->fd);
+	write(curr_disk_img->fd, &(curr_disk_img->inodes[inode]), sizeof(struct inode));
+	// f_write(&(curr_disk_img->inodes[inode]), sizeof(struct inode), 1, curr_disk_img->fd);
 }
 
 /* get data from datablock */
@@ -774,7 +880,8 @@ void create_free_blocks(int block_num) {
 
 	// write free block back
 	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.free_block + free_head) * (curr_disk_img->sb).size, SEEK_SET);
-	f_write((char*) tmp_free_block, curr_disk_img->sb.size, 1, curr_disk_img->fd);
+	write(curr_disk_img->fd, (char*) tmp_free_block, curr_disk_img->sb.size);
+	// f_write((char*) tmp_free_block, curr_disk_img->sb.size, 1, curr_disk_img->fd);
 	free(tmp_free_block);
 }
 
@@ -1114,7 +1221,8 @@ int find_free() {
 
 	// write free block
 	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.free_block + free_head) * (curr_disk_img->sb).size, SEEK_SET);
-	f_write((char*) tmp_free_block, curr_disk_img->sb.size, 1, curr_disk_img->fd);
+	write(curr_disk_img->fd, (char*) tmp_free_block, curr_disk_img->sb.size);
+	// f_write((char*) tmp_free_block, curr_disk_img->sb.size, 1, curr_disk_img->fd);
 	free(tmp_free_block);
 
 	return block_num;
@@ -1122,7 +1230,8 @@ int find_free() {
 
 void write_dblock(int dblock, void *data) {
 	lseek(curr_disk_img->fd, INODE_OFFSET + (curr_disk_img->sb.data_offset + dblock) * curr_disk_img->sb.size, SEEK_SET);
-	f_write(data, curr_disk_img->sb.size, 1, curr_disk_img->fd);
+	write(curr_disk_img->fd, data, curr_disk_img->sb.size);
+	// f_write(data, curr_disk_img->sb.size, 1, curr_disk_img->fd);
 }
 
 void write_iblock(int iblock, int block_num, void *data, int available[4]) {
