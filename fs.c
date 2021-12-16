@@ -3,6 +3,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <assert.h>
 #include "fs.h"
 
 #define ROOT '/'
@@ -120,57 +121,18 @@ int f_open(const char *filename, const char *mode) {
 }
 
 size_t f_read(void *ptr, size_t size, size_t nmemb, int fd) {
-	if (check_valid_fd(fd) == -1) return -1;
-	// user has no access
-	if (dimage->inodes[open_files[fd].inode].permission & PERMISSION_R) return -1;
-	// file can't be read
-	if (!(open_files[fd].mode & O_RDONLY) && !(open_files[fd].mode & O_RDWR)) return -1;
+	// struct inode curr = dimage->inodes[curDir];
+	// FILE *ptr = disk;
+	// int file_size = dimage->sb.size;
+	// void *out_buffer = malloc(file_size);
+	// void *in_buffer = malloc(file_size);
 
-	size_t total_size = size * nmemb;
-	int file_size = open_files[fd].size;
-	int block_size = dimage->sb.size;
+	// bzero(in_buffer, file_size);
+	// bzero(out_buffer, file_size);
 
-	size_t curr_offset = 0;
-	int read = 0; // read size
-	int first = 0;
-
-	if (file_size > 0) {
-		first = file_size / block_size;
-		size_t extra = file_size % block_size;
-		if (extra > 0) {
-			size_t new_size = block_size - extra;
-			if (total_size < new_size) new_size = total_size;
-			struct datablock tmp_block = get_data(open_files[fd].inode, first);
-			memcpy(ptr + curr_offset, tmp_block.data + extra, new_size);
-			free(tmp_block.data);
-			total_size -= new_size;
-			curr_offset += new_size;
-			read += new_size;
-			first++;
-		}
-	}
-
-	// the rest of data
-	size_t rest;
-	int block_num = total_size / block_size;
-	if (total_size % block_size > 0) block_num++;
-	for (int i = first; i < first + block_num; i++) {
-		if (total_size <= 0) break;
-
-		struct datablock tmp_block = get_data(open_files[fd].inode, i);
-		if (tmp_block.data == 0) break;
-
-		rest = total_size % block_size;
-		if (rest == 0) rest += block_size;
-
-		memcpy(ptr + curr_offset, tmp_block.data, rest);
-		free(tmp_block.data);
-		total_size -= rest;
-		curr_offset += rest;
-		read += rest;
-	}
-	open_files[fd].size += nmemb * size;
-	return read;
+	// read(ptr, out_buffer, file_size);
+	
+	return size;
 }
 
 size_t f_write(const void *ptr, size_t size, size_t nmemb, int fd) {
@@ -516,6 +478,109 @@ int findDir(const char *dirname, const struct inode i) {
 		free(fileblock);
 	}
 	return -1;
+}
+
+char** str_split(char* a_str, const char a_delim)
+{
+    char** result    = 0;
+    size_t count     = 0;
+    char* tmp        = a_str;
+    char* last_comma = 0;
+    char delim[2];
+    delim[0] = a_delim;
+    delim[1] = 0;
+
+    /* Count how many elements will be extracted. */
+    while (*tmp)
+    {
+        if (a_delim == *tmp)
+        {
+            count++;
+            last_comma = tmp;
+        }
+        tmp++;
+    }
+
+    /* Add space for trailing token. */
+    count += last_comma < (a_str + strlen(a_str) - 1);
+
+    /* Add space for terminating null string so caller
+       knows where the list of returned strings ends. */
+    count++;
+
+    result = malloc(sizeof(char*) * count);
+
+    if (result)
+    {
+        size_t idx  = 0;
+        char* token = strtok(a_str, delim);
+
+        while (token)
+        {
+            assert(idx < count);
+            *(result + idx++) = strdup(token);
+            token = strtok(0, delim);
+        }
+        assert(idx == count - 1);
+        *(result + idx) = 0;
+    }
+
+    return result;
+}
+
+char *find_pwd_dir() {
+	// printf("curDir: %d\n", curDir);
+	struct inode curr = dimage->inodes[curDir];
+	char *data = malloc(curr.size);
+	data = dimage->blocks[curDir-2];
+	char** tokens;
+
+    // printf("data=[%s]\n\n", data);
+
+	tokens = str_split(data, '\n');
+	char* old;
+
+    if (tokens)
+    {
+        int i;
+        for (i = 0; *(tokens + i); i++)
+        {
+			old = malloc(sizeof(*(tokens + i)));
+			old = *(tokens + i);
+			// printf("month=[%s]\n", old);
+			if (i == (curDir - 1)) break;
+            free(*(tokens + i));
+        }
+        // printf("\n");
+		// printf("%s", old);
+        free(tokens);
+    }
+
+	data = old;
+    tokens = str_split(data, '\t');
+	char *path = malloc(500);
+	path = strcat(path, "/");
+	char *result;
+
+    if (tokens)
+    {
+        int i;
+        for (i = 0; *(tokens + i); i++)
+        {
+			result = malloc(100);
+			result = strcat(result, *(tokens + i));
+			result = strcat(result, "/");
+			// printf("path=[%s]\n", path);
+			if (i == 3) break;
+            free(*(tokens + i));
+        }
+        printf("\n");
+		path = strcat(path, result);
+		// printf("path: %s\n", path);
+		printf("%s", result);
+        free(tokens);
+    }
+
 }
 
 int f_mkdir(const char *dirname, mode_t mode) {

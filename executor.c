@@ -276,6 +276,12 @@ bool builtIn(char* input, int argc, char*argv[]){
 			curDir = f_moveDir(dir_name);
 		}
 		return true;
+	} else if (strcmp(input, "pwd") == 0) {		
+		struct inode pwd_inode = dimage->inodes[curDir];
+
+		find_pwd_dir();
+		return true;
+	} else if (strcmp(input, "cat") == 0) {
 	} else if (strcmp(input, "rm") == 0) {
 	} else if (strcmp(input, "mount") == 0) {
 	} else if (strcmp(input, "unmount") == 0) {

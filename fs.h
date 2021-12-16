@@ -13,6 +13,8 @@ extern int uid;
 void free_diskimage(struct diskimage *di);
 
 /* helper functions */
+char** str_split(char* a_str, const char a_delim);
+char *find_pwd_dir();
 int findDir(const char *dirname, const struct inode i); 
 int check_valid_fd(int fd);
 void rel_or_abs_path(const char *filename);
