@@ -5,6 +5,7 @@
 struct LinkedList* joblist;
 
 FILE* disk;
+struct disk_img* dimage;
 
 int MAX_LINE_SIZE = MS;
 int MAX_NUM_LINES = ML;

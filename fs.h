@@ -1,8 +1,13 @@
 #ifndef FS_H
 #define FS_H
 
-#include "structs.h"
+#include "shared.h"
 // #include <sys/stat.h>
+
+
+
+void set_dir_img(struct disk_img *di, FILE *dsk);
+void free_disk_img(struct disk_img *di);
 
 /* helper functions */
 int check_valid_fd(int fd);
@@ -32,7 +37,6 @@ void write_dblock(int dblock, void *data);
 void write_iblock(int iblock, int block_num, void *data, int available[4]);
 void write_i2block(int i2block, int *block_num, void *data, int available[4]);
 void write_i3block(int i3block, int *block_num, void *data, int available[4]);
-void update_db(struct datablock *db);
 
 /* library functions */
 int f_open(const char *filename, const char *mode);

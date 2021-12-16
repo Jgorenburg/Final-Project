@@ -19,7 +19,31 @@ int root_inode = 0;
 extern int curr_fd = 0;
 extern int uid = 0;
 
+void set_dir_img(struct disk_img *di, FILE *dsk) {
+	di->id = (int)dsk;
+	struct superblock *tempSB = malloc(sizeof(struct superblock));
+	fseek(dsk, SUPER_OFFSET, SEEK_SET);
+	fread(tempSB, sizeof(struct superblock), 1, dsk); 
+	di->sb = *tempSB;
+	
+	int numInodes = ((tempSB->data_offset - tempSB->inode_offset) * tempSB->size) / sizeof(struct inode) + 1;
+	di->inodes = malloc(numInodes * sizeof(struct inode));
+	int loc = INODE_OFFSET; 
+	for (int i = 0; i < numInodes; i++) {			
+		struct inode *new_inode = malloc(sizeof(struct inode));
+		fseek(dsk, loc, SEEK_SET);
+		fread(new_inode, sizeof(struct inode), 1, dsk);
+		di->inodes[i] = *new_inode;
+		loc += sizeof(struct inode);
+		free(new_inode);
+	}
 
+	free(tempSB);
+}
+
+void free_disk_img(struct disk_img *di) {
+	free(di->inodes);
+}
 
 
 // need to set errno
