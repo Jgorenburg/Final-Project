@@ -317,7 +317,7 @@ void execute() {
 					free(args[j]);
 				}
 				if (quitting) {	
-					//free_disk_img(dimage);
+					free_diskimage(dimage);
 					free_list(joblist);
 					fclose(disk);
 					exit(0);

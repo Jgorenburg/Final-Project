@@ -13,7 +13,7 @@ readdisk: diskReader.c format.h structs.o
 fs.o: fs.c fs.h structs.o shared.o 
 	$(CC) $(CFLAGS) -c fs.c
 
-format: format.c format.h
+format: format.c format.h struct.o
 	$(CC) $(CFLAGS) -o format format.c
 
 shell: fs.o main.o shared.o parser.o linkedlist.o jobs.o executor.o
@@ -22,7 +22,7 @@ shell: fs.o main.o shared.o parser.o linkedlist.o jobs.o executor.o
 main.o: main.c main.h parser.o shared.o fs.o
 	$(CC) $(CFLAGS) -c main.c
 
-shared.o: shared.c shared.h structs.o 
+shared.o: shared.c shared.h struct.o 
 	$(CC) $(CFLAGS) -c shared.c
 
 struct.o: structs.c structs.h

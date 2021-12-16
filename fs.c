@@ -21,6 +21,12 @@ int uid = 0;
 
 void free_diskimage(struct diskimage *di) {
 	free(di->inodes);
+	int numBlocks = di->sb.swap_offset - di->sb.data_offset;
+	for (int i = 0; i < numBlocks; i++) {
+		free(di->blocks[i]);
+	}
+	free(di->blocks);
+	free(di->root);
 }
 
 
@@ -474,32 +480,31 @@ int findDir(const char *dirname, const struct inode i) {
 	while (loc < i.size) {
 		int dnode = loc / dimage->sb.size;
 		int offset = loc % dimage->sb.size;
-		if (dnode < N_DBLOCKS) {
-			fseek(disk, i.dblocks[dnode] + offset, SEEK_SET);
+		char * fileblock = malloc(dimage->sb.size);
+		int dloc = i.dblocks[dnode];
+		if (dloc == -1) {
+			strcpy(fileblock, dimage->root);
 		}
 		else {
-			printf("sorry, have not implemented directory files that large yet\n");
-			return -1;
+			strcpy(fileblock, dimage->blocks[dloc]);	
 		}
-		char * fileblock = malloc(dimage->sb.size);
-		fread(fileblock, dimage->sb.size, 1, disk);
-		strtok(fileblock, "\t");	
-		strtok(NULL, "\t");
-		char * id = strtok(NULL, "\t");
-		char * name = strtok(NULL, "\n");
-		if (strcmp(name, dirname) == 0) {
-			int numID;
-			sscanf(id, "%d", &numID);
-			free(fileblock);
-			return numID;
-		}	
-		free(fileblock);
-		fseek(disk, i.dblocks[dnode] + offset, SEEK_SET);
-		fileblock = malloc(dimage->sb.size);
-		fread(fileblock, dimage->sb.size, 1, disk);
-		int j = 0;
-		while(fileblock[j++] != '\n');
-		loc += j;
+
+		strtok(fileblock, "\t");
+		while (fileblock != NULL) {
+			strtok(NULL, "\t");
+			char * id = strtok(NULL, "\t");
+			char * name = strtok(NULL, "\n");
+			if (name != NULL && strcmp(name, dirname) == 0) {
+				int numID;
+				sscanf(id, "%d", &numID);
+				free(fileblock);
+				return numID;
+			}
+			if (fileblock != NULL) {
+				strtok(NULL, "\t");	
+			}	
+		}
+		loc += dimage->sb.size;
 		free(fileblock);
 	}
 	return -1;
@@ -511,97 +516,79 @@ int f_mkdir(const char *dirname, mode_t mode) {
 		mode = DEFAULT_DIR_PERMISSION;
 	}
 
+
 	char *path = (char *) malloc(NAME_LENGTH + 1);
 	bzero(path, NAME_LENGTH + 1);
 	strcpy(path, dirname);
 
+	char* delim_path[100];
+
 	char *path_parts = strtok(path, DELIM);
-	rel_or_abs_path(dirname);
-
-	struct filent file_in_dir;
-	while (path_parts) {
-		printf("IN FUNCRION\n");
-		file_in_dir = find_file_in_dir(fd_count, path_parts);
-
-		if(!(dimage->inodes[open_files[fd_count].inode].permission & PERMISSION_W)) {
-			return -1;
-		}
-
-
-		if(strend(dirname, path_parts)) {
-
-
-			if (file_in_dir.inode < 0) {
-				// dir doesn't exist
-				if(create_file(fd_count, IS_DIRECTORY, path_parts, mode) < 0) {
-					free(path);
-					return -1;
-				}
-				// path
-				if(open_files[fd_count].inode == 0) {
-					open_files[fd_count].size = INIT_SIZE - 1;
-				} else {
-					open_files[fd_count].size = INIT_SIZE;
-				}
-				file_in_dir = find_file_in_dir(fd_count, path_parts);
-				open_files[fd_count].inode = file_in_dir.inode;
-				open_files[fd_count].size = 0;
-				open_files[fd_count].mode = O_RDONLY;
-
-				char file_name[NAME_LENGTH];
-				bzero(file_name, NAME_LENGTH);
-				int parent_inode = open_files[fd_count].inode;
-				int entry_size = NAME_LENGTH + INT_SIZE;
-
-				file_name[0] = '.';
-				if(write_file(&(file_in_dir.inode), INT_SIZE, 1, fd_count, open_files[fd_count].size * entry_size) != INT_SIZE) {
-					free(path);
-					return -1;
-				}
-				if(write_file(file_name, NAME_LENGTH, 1, fd_count, open_files[fd_count].size*entry_size + INT_SIZE) != NAME_LENGTH) {
-					free(path);
-					return -1;
-				}
-				open_files[fd_count].size += 1;
-				dimage->inodes[file_in_dir.inode].size += 1;
-
-				file_name[1] = '.';
-				if(write_file(&parent_inode, INT_SIZE, 1, fd_count, open_files[fd_count].size * entry_size) != INT_SIZE) {
-					free(path);
-					return -1;
-				}
-				if(write_file(file_name, NAME_LENGTH, 1, fd_count, open_files[fd_count].size*entry_size + INT_SIZE) != NAME_LENGTH) {
-					free(path);
-					return -1;
-				}
-				update_inode(file_in_dir.inode);
-
-				open_files[fd_count].size += 1;
-				dimage->inodes[file_in_dir.inode].size += 1;
-
-				free(path);
-				return 0;
-			}
-			free(path);
-			return -1;
-		} else {
-			if (file_in_dir.inode < 0) {
-				free(path);
-				return -1;
-			}
-		}
-
-		if(open_files[fd_count].inode == 0) {
-			open_files[fd_count].size = INIT_SIZE - 1;
-		} else {
-			open_files[fd_count].size = INIT_SIZE;
-		}
-		open_files[fd_count].inode = file_in_dir.inode;
-		open_files[fd_count].mode = O_RDONLY;
+	int index = 0;
+	while (path_parts != NULL) {
+		delim_path[index] = malloc(strlen(path_parts));
+		delim_path[index] = path_parts;
 		path_parts = strtok(NULL, DELIM);
+		index++;
 	}
-	free(path);
-	return 0;
+	index--;
+	int tempDir = curDir;
+	int pos = 0;	
+	while (pos < index) {
+		struct inode idir = dimage->inodes[tempDir];
+		if ((tempDir = findDir(delim_path[pos], idir)) == -1) {
+			printf("error: path to new directory does not exist\n");
+			return 1;
+		}	
+		pos++;
+	}
+
+	struct filent * newDir = malloc (sizeof(struct filent));
+	newDir->file_name = delim_path[index];
+	newDir->inode = dimage->sb.free_inode;
+	newDir->user = "guest";
+	newDir->perms = "----------";
+
+	struct inode* iparent = &dimage->inodes[tempDir];
+	iparent->nlink++;
+	char *dirEntry = (char *) malloc (5 * NAME_LENGTH);
+	int dirLen = formatDir(newDir, dirEntry);
+	iparent->size += dirLen;
+	if (tempDir != 0) {
+		strcat(dimage->blocks[iparent->dblocks[iparent->size / dimage->sb.size]], dirEntry);	
+	}
+	else {
+		strcat(dimage->root, dirEntry);
+	}
+
+	struct inode* new_inode = &dimage->inodes[dimage->sb.free_inode];
+	new_inode->nlink = 0;
+	new_inode->next_free = 0;
+	new_inode->type = 1;
+	new_inode->size = 0;
+	clock_t time = clock();
+	new_inode->ctime = time;	
+	new_inode->mtime = time;	
+	new_inode->atime = time;	
+	new_inode->dblocks[0] = dimage->sb.free_block++;
+
+	free(dirEntry);	
+	dirEntry = (char *) malloc (5 * NAME_LENGTH);
+	dirLen = dotdotDir(newDir, dirEntry);
+	new_inode->size += dirLen;
+	strcat(dimage->blocks[new_inode->dblocks[0]], dirEntry);
+	free(dirEntry);	
+	dirEntry = (char *) malloc (5 * NAME_LENGTH);
+	dirLen = dotDir(newDir, dirEntry);
+	new_inode->size += dirLen;
+	strcat(dimage->blocks[new_inode->dblocks[0]], dirEntry);
+	free(dirEntry);
+	free(newDir);
+	for (int i = 0; i < index; i++){
+		free(delim_path[i]);
+	}
+
+	return 0;	
 }
 
 int f_rmdir(const char *dirname) {
@@ -1254,3 +1241,21 @@ void update_db(struct datablock *db) {
 	lseek(dimage->fd, INODE_OFFSET + (dimage->sb.data_offset + db->address) * dimage->sb.size, SEEK_SET);
 	write(dimage->fd, db->data, dimage->sb.size);
 }
+
+// formats directory entry as a string
+int formatDir (struct filent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
+	return strlen(output);	
+}
+
+// like formatDir, but turn name into . and ..
+int dotDir (struct filent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t.\n", dir->perms, dir->user, dir->inode);	
+	return strlen(output);	
+}
+
+int dotdotDir (struct filent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t..\n", dir->perms, dir->user, dir->inode);	
+	return strlen(output);	
+}
+

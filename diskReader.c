@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 			allData[i] = malloc(roundSize);
 			for (int j = 0; j < roundSize; j += sb->size) {
 				if (j / sb->size < N_DBLOCKS) {
-					fseek(fp, new_inode->dblocks[j / sb->size], SEEK_SET);
+					fseek(fp, (3 + sb->data_offset + new_inode->dblocks[j / sb->size]) * sb->size, SEEK_SET);
 					fread(allData[i] + j, sb->size, 1, fp); 
 				}
 			}

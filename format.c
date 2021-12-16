@@ -1,5 +1,24 @@
 #include "format.h"
 
+
+// formats directory entry as a string
+int formatDir (struct filent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t%s\n", dir->perms, dir->user, dir->inode, dir->file_name);	
+	return strlen(output);	
+}
+
+// like formatDir, but turn name into . and ..
+int dotDir (struct filent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t.\n", dir->perms, dir->user, dir->inode);	
+	return strlen(output);	
+}
+
+int dotdotDir (struct filent* dir, char* output) {	
+	sprintf(output, "%s\t%s\t%d\t..\n", dir->perms, dir->user, dir->inode);	
+	return strlen(output);	
+}
+
+
 int main (int argc, char *argv[]) {
 
 	int fileSize = DEFAULTSIZE;
@@ -53,11 +72,11 @@ int main (int argc, char *argv[]) {
 	sb->size = BLOCKSIZE;
 	sb->inode_offset = IOFFSET;
 	// inodes get 1/7 of the remaining space
-	sb->data_offset = IOFFSET + ((fileSize - OFFSET) / 7) / BLOCKSIZE;
+	sb->data_offset = IOFFSET + (((fileSize - OFFSET) / 7) / BLOCKSIZE);
 	// swap gets the final block
 	sb->swap_offset = ((fileSize - OFFSET) / BLOCKSIZE) - 1;
-	sb->free_inode = OFFSET + sb->inode_offset * BLOCKSIZE;
-	sb->free_block = OFFSET + sb->data_offset * BLOCKSIZE;		
+	sb->free_inode = 3;
+	sb->free_block = 2;		
 
 	// making root directory
 	struct filent * rootdir = malloc (sizeof(struct filent));
@@ -97,7 +116,7 @@ int main (int argc, char *argv[]) {
 	root_inode->ctime = time;	
 	root_inode->mtime = time;	
 	root_inode->atime = time;	
-	root_inode->dblocks[0] = 2 * SBSIZE;
+	root_inode->dblocks[0] = -1;
 
 	// making inodes for admin and guest
 
@@ -112,7 +131,7 @@ int main (int argc, char *argv[]) {
 	admin_inode->ctime = time;	
 	admin_inode->mtime = time;	
 	admin_inode->atime = time;	
-	admin_inode->dblocks[0] = OFFSET + sb->data_offset * sb->size;
+	admin_inode->dblocks[0] = 0;
 
 	struct inode* guest_inode = malloc (sizeof(struct inode));
 	guest_inode->nlink = 0;
@@ -125,10 +144,10 @@ int main (int argc, char *argv[]) {
 	guest_inode->ctime = time;	
 	guest_inode->mtime = time;	
 	guest_inode->atime = time;	
-	guest_inode->dblocks[0] = OFFSET + (sb->data_offset + 1) * sb->size;
+	guest_inode->dblocks[0] = 1;
 
-
-	int data_loc = sb->free_block;
+	int nfree = 4;
+	int data_loc = (sb->data_offset + sb->free_block + 3) * sb->size;
 	// makes and writes inodes for all empty disk space
 	for (int loc = OFFSET + 3 * sizeof(struct inode); loc + sizeof(struct inode) < data_loc; loc += sizeof(struct inode)) {
 		struct inode* empty_inode;
@@ -140,8 +159,9 @@ int main (int argc, char *argv[]) {
 		empty_inode->mtime = time;
 		empty_inode->atime = time;		
 		empty_inode->protect = 0;
-		empty_inode->next_free = loc + sizeof(struct inode);
-		if (empty_inode->next_free + sizeof(struct inode) >= data_loc) {
+		empty_inode->next_free = nfree;
+		nfree++;
+		if (OFFSET + nfree * sb->size + sizeof(struct inode) >= data_loc) {
 			empty_inode->next_free = -1;
 		} 
 		
@@ -149,8 +169,6 @@ int main (int argc, char *argv[]) {
 		fwrite(empty_inode, sizeof(struct inode), 1, fp);		
 		free(empty_inode);
 	}	
-	sb->free_inode += 3 * sizeof(struct inode);
-	sb->free_block += root_inode->size + admin_inode->size + guest_inode->size;
 
 
 	// writing the superblock					
@@ -178,7 +196,7 @@ int main (int argc, char *argv[]) {
 	// writing guest and admin directories	
 	char *admin = (char *) malloc (5 * NAME_LENGTH);
 	dirLen = dotdotDir(rootdir, admin);
-	fseek(fp, admin_inode->dblocks[0], SEEK_SET);
+	fseek(fp, sb->size * (3 + sb->data_offset + admin_inode->dblocks[0]), SEEK_SET);
 	fwrite(admin, dirLen, 1, fp);
 	admin_inode->size += dirLen;
 	dirLen = dotDir(admindir, admin);
@@ -189,7 +207,7 @@ int main (int argc, char *argv[]) {
 
 	char *guest = (char *) malloc (5 * NAME_LENGTH);
 	dirLen = dotdotDir(rootdir, guest);
-	fseek(fp, guest_inode->dblocks[0], SEEK_SET);
+	fseek(fp, sb->size * (3 + sb->data_offset + guest_inode->dblocks[0]), SEEK_SET);
 	fwrite(guest, dirLen, 1, fp);
 	guest_inode->size += dirLen;
 	dirLen = dotDir(guestdir, guest);
